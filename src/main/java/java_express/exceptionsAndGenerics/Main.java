@@ -10,8 +10,8 @@ public class Main {
     public static void main(String[] args) {
         Box<String> box = new Box<>();
 
-        box.setT("Test");
-        System.out.println(box.getT());
+        box.setItem("Test");
+        System.out.println(box.getItem());
 
         printArray(new String[]{"1", "2", "3"});
 
@@ -33,7 +33,7 @@ public class Main {
             System.out.println("ФАЙЛ НЕ НАЙДЕН");
         } finally {
             try {
-                br.close();
+                if (br != null) br.close();
             } catch (IOException e) {
                 throw new RuntimeException();
             }
@@ -45,14 +45,14 @@ public class Main {
         return x / y;
     }
 
-    public static void checkAges(int age) throws Exception {
-        if ((age <= 0) && (age > 150)) throw new Exception();
+    public static void checkAges(int age) throws IllegalArgumentException {
+        if (age <= 0 || age > 150) throw new IllegalArgumentException();
 
         System.out.println("Возраст ок");
     }
 
-    public static void checkEmail(String email) throws RuntimeException {
-        if (!(email.endsWith("@mail.com"))) throw new RuntimeException();
+    public static void checkEmail(String email) throws IllegalArgumentException {
+        if (email == null && email.isBlank() && !(email.endsWith("@mail.com"))) throw new IllegalArgumentException();
 
         System.out.println("Почта ок");
     }

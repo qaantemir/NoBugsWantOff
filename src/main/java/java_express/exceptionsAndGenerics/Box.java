@@ -1,13 +1,13 @@
 package java_express.exceptionsAndGenerics;
 
 public class Box <T> {
-    private T t;
+    private T item;
 
-    public T getT() {
-        return t;
+    public T getItem() {
+        return item;
     }
 
-    public void setT(T t) {
-        this.t = t;
+    public void setItem(T item) {
+        this.item = item;
     }
 }
