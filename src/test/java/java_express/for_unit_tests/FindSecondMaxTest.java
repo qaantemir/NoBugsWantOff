@@ -37,14 +37,14 @@ public class FindSecondMaxTest extends FunctionsTest {
 
     @Test
     void userInpuArrayWithOneElementAndGetException() {
-        assertThrows(NoSuchElementException.class,
-                () -> functions.findMax(new int[]{1}));
+        assertThrows(IllegalArgumentException.class,
+                () -> functions.findSecondMax(new int[]{1}));
     }
 
     @Test
     void userInputEmptyArrayAndGetException() {
-        assertThrows(NoSuchElementException.class,
-                () -> functions.findMax(new int[0]));
+        assertThrows(IllegalArgumentException.class,
+                () -> functions.findSecondMax(new int[0]));
 
     }
 }

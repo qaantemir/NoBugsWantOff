@@ -15,7 +15,7 @@ public class FactorialTest extends FunctionsTest {
 
     static Stream<Arguments> valuesMoreThanZeroForFactorial() {
         return Stream.of(
-                Arguments.of(0, 0),
+                Arguments.of(0, 1),
                 Arguments.of(1, 1),
                 Arguments.of(5,120),
                 Arguments.of(7, 5040)
