@@ -9,7 +9,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @ToString
-public class Movie implements Comparable {
+public class Movie {
     private final String name;
     private Double averageRating;
 
@@ -27,11 +27,5 @@ public class Movie implements Comparable {
     @Override
     public int hashCode() {
         return Objects.hashCode(name);
-    }
-
-    @Override
-    public int compareTo(Object o) {
-        Movie that = (Movie) o;
-        return this.averageRating.compareTo(that.getAverageRating());
     }
 }

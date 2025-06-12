@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 public class MovieService {
     @Getter
-    private volatile Map<Movie, List<Rating>> movieAndRatingsListMap = new TreeMap<>();
+    private volatile Map<Movie, List<Rating>> movieAndRatingsListMap = new HashMap<>();
 
     public synchronized void addRating(Movie movie, Rating rating) {
         if (rating == null && (rating.getRating().doubleValue() < 1. || rating.getRating().doubleValue() > 10.))
@@ -32,6 +32,14 @@ public class MovieService {
     }
 
     public synchronized TreeSet<Movie> getSortedByRatingSet() {
-        return new TreeSet<>(this.movieAndRatingsListMap.keySet());
+        Comparator<Movie> comparator = new Comparator<Movie>() {
+            @Override
+            public int compare(Movie m1, Movie m2) {
+                return m1.getAverageRating().compareTo(m2.getAverageRating());
+            }
+        };
+        TreeSet<Movie> movieTreeSet = new TreeSet<>(comparator);
+        movieTreeSet.addAll(this.movieAndRatingsListMap.keySet());
+        return movieTreeSet;
     }
 }

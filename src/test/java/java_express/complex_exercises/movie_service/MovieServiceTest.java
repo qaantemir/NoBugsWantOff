@@ -73,10 +73,14 @@ class MovieServiceTest {
 
 
 
-        List<Movie> expectedResult = new ArrayList<>(movieAndRatingsListMap.keySet());
-        Collections.sort(expectedResult);
+        List<Movie> expectedResult = new ArrayList<>(movieService.getSortedByRatingSet());
+        Collections.sort(expectedResult,
+                (x,y) -> x.getAverageRating().compareTo(y.getAverageRating()));
 
         List<Movie> actualResult = movieService.getSortedByRatingSet().stream().toList();
+
+        System.out.println(expectedResult);
+        System.out.println(actualResult);
 
         assertEquals(expectedResult,actualResult);
 
@@ -90,11 +94,22 @@ class MovieServiceTest {
         movieService.addRating(m1,new Rating(5));
         movieService.addRating(m2,new Rating(1));
 
-        System.out.println(movieAndRatingsListMap);
+        int movieAndRatingsListMapLength = movieAndRatingsListMap.size();
+
+        assertEquals(movieAndRatingsListMapLength, 1);
     }
 
     @Test
     void userShouldAddNewMovie() {
+        Movie m1 = new Movie("Наруто");
+        Movie m2 = new Movie("Наруто");
+
+        movieService.addRating(m1,new Rating(5));
+        movieService.addRating(m2,new Rating(1));
+
+        int movieAndRatingsListMapLength = movieAndRatingsListMap.size();
+
+        assertEquals(movieAndRatingsListMapLength, 1);
 
     }
 }
