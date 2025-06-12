@@ -1,43 +1,37 @@
 package java_express.complex_exercises.movie_service;
 
-import com.github.javafaker.Demographic;
-import com.github.javafaker.Faker;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-@Getter
 public class MovieService {
-    private volatile Map<Movie, List<Rating>> movieListMap = new HashMap<>();
+    @Getter
+    private volatile Map<Movie, List<Rating>> movieAndRatingsListMap = new TreeMap<>();
 
-    public synchronized <T extends Number> void addGrade(Movie movie, T grade) {
-        double wrappedGrade = (double) grade;
-        if (wrappedGrade < 1 || wrappedGrade > 10) throw new IllegalArgumentException();
-        Rating<T> rating = new Rating<>(grade);
-        // todo реализовать подсчет средней на этом этапе
-        movieListMap.get(movie).add(rating);
+    public synchronized void addRating(Movie movie, Rating rating) {
+        if (rating == null && (rating.getRating().doubleValue() < 1. || rating.getRating().doubleValue() > 10.))
+            throw new IllegalArgumentException();
+
+        if (!this.movieAndRatingsListMap.containsKey(movie))
+            movieAndRatingsListMap.put(movie, new ArrayList<>());
+
+        List<Rating> ratingList = this.movieAndRatingsListMap.get(movie);
+
+        ratingList.add(rating);
+
+        double avgRating = ratingList.stream()
+                .mapToDouble(r -> r.getRating().doubleValue())
+                .average().getAsDouble();
+
+        movie.setAverageRating(avgRating);
     }
 
-    public double getAvgRating(Movie movie) {
-        List<Rating> ratingList = movieListMap.get(movie);
-        int length = ratingList.size();
-        double sum = ratingList.stream()
-                .mapToDouble(n -> n.getGrade().doubleValue())
-                .sum();
-
-        return (double) sum / length;
+    public synchronized double getAverageRating(Movie movie) {
+        return movie.getAverageRating();
     }
 
-
-    public List<Movie> sortByRating() {
-        return this.movieListMap.keySet().stream()
-                        .peek(movie -> {
-                            var avg = this.getAvgRating(movie);
-                            movie.setAverageRating(avg);
-                        })
-                        .toList();
+    public synchronized TreeSet<Movie> getSortedByRatingSet() {
+        return new TreeSet<>(this.movieAndRatingsListMap.keySet());
     }
-
 }

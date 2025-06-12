@@ -1,14 +1,37 @@
 package java_express.complex_exercises.movie_service;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Builder
-@EqualsAndHashCode
-@ToString
+import java.util.Objects;
+
 @Getter
 @Setter
-public class Movie {
-    private String Name;
-    private String genre;
+@ToString
+public class Movie implements Comparable {
+    private final String name;
     private Double averageRating;
+
+    public Movie(String name) {
+        this.name = name;
+        this.averageRating = 0.;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Movie movie)) return false;
+        return Objects.equals(name, movie.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        Movie that = (Movie) o;
+        return this.averageRating.compareTo(that.getAverageRating());
+    }
 }

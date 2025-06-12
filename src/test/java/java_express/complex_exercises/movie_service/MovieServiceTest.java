@@ -4,135 +4,97 @@ import com.github.javafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MovieServiceTest {
-
-    /**
-     *     «Интерстеллар» (фантастика)
-     *     «Пираты» (приключения)
-     *     «Гладиатор» (исторический)
-     *     «Драйв» (триллер)
-     *     «Матрица» (антиутопия)
-     */
-
-    /**
-     * добавление оценки:
-     * добавить 3 оценки каждому фильму -> оценки добавлены
-     * <p>
-     * расчет средней:
-     * расчитать среднюю по каждому фильму -> средние получены
-     * <p>
-     * сортировка:
-     * получение сортированного списка фильмов == храние -> сортированный список
-     */
-
-
     MovieService movieService;
-    Map<Movie, List<Rating>> movieListMap;
-    Movie m1, m2, m3;
+    Map<Movie, List<Rating>> movieAndRatingsListMap;
 
     @BeforeEach
     void setupTest() {
         movieService = new MovieService();
-
-        movieListMap = movieService.getMovieListMap();
-
-        m1 = Movie.builder()
-                .Name("Интерстеллар")
-                .genre("Фантастика")
-                .build();
-
-        m2 = Movie.builder()
-                .Name("Пираты")
-                .genre("Приключения")
-                .build();
-
-        m3 = Movie.builder()
-                .Name("Гладиатор")
-                .genre("Исторический")
-                .build();
-
-        movieListMap.put(m1, new ArrayList<Rating>());
-        movieListMap.put(m2, new ArrayList<Rating>());
-        movieListMap.put(m3, new ArrayList<Rating>());
-
-
+        movieAndRatingsListMap = movieService.getMovieAndRatingsListMap();
 
     }
 
-    @Test
-    void userAddThreeGradesToEachMovie() {
-        double g1 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g2 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g3 = Faker.instance().number().randomDouble(2, 1, 10);
-
-        movieService.addGrade(m1, g1);
-        movieService.addGrade(m1, g2);
-        movieService.addGrade(m1, g3);
-
-        List<Rating> expectedResult = new ArrayList<>(){{
-            add(new Rating<>(g1));
-            add(new Rating<>(g2));
-            add(new Rating<>(g3));
-        }};
-        List<Rating> actualResult = new ArrayList<>(movieService.getMovieListMap().get(m1));
-        assertEquals(expectedResult, actualResult);
-
-    }
 
     @Test
-    void userShouldGetMovieAvgRating() {
-        double g1 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g2 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g3 = Faker.instance().number().randomDouble(2, 1, 10);
+    void userShouldAddRatingToMovie() {
+        Movie movie = new Movie("Интерстеллар");
+        Rating<Integer> expectedResult = new Rating<>(5);
 
-        movieService.addGrade(m1, g1);
-        movieService.addGrade(m1, g2);
-        movieService.addGrade(m1, g3);
+        movieAndRatingsListMap.put(movie, new ArrayList<Rating>());
+        movieService.addRating(movie, expectedResult);
 
-        double expectedResult = (g1 + g2 + g3) / 3;
-        double actualResult = movieService.getAvgRating(m1);
+        Rating<Integer> actualResult = movieService.getMovieAndRatingsListMap().get(movie).getFirst();
 
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
-    void userShouldGetSortedMovieList() {
-        double g1 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g2 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g3 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g4 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g5 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g6 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g7 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g8 = Faker.instance().number().randomDouble(2, 1, 10);
-        double g9 = Faker.instance().number().randomDouble(2, 1, 10);
+    void averageRatingShouldCalculatedAfterAddMovie() {
+        Movie movie = new Movie("Интерстеллар");
+        Rating<Integer> rating1 = new Rating<>(1);
+        Rating<Integer> rating2 = new Rating<>(2);
+        Rating<Integer> rating3 = new Rating<>(3);
 
-        movieService.addGrade(m1, g1);
-        movieService.addGrade(m1, g2);
-        movieService.addGrade(m1, g3);
+        movieAndRatingsListMap.put(movie, new ArrayList<Rating>());
 
-        movieService.addGrade(m2, g4);
-        movieService.addGrade(m2, g5);
-        movieService.addGrade(m2, g6);
+        for (var rating : List.of(rating1, rating2, rating3))
+            movieService.addRating(movie, rating);
 
-        movieService.addGrade(m3, g7);
-        movieService.addGrade(m3, g8);
-        movieService.addGrade(m3, g9);
+        double expectedResult =
+                (rating1.getRating().doubleValue()
+                        + rating2.getRating().doubleValue()
+                        + rating3.getRating().doubleValue())
+                        / 3;
 
-        Map<Movie, List<Rating>> expectedResult = new TreeMap<>(
-                (x, y) -> x.getAverageRating().compareTo(y.getAverageRating()));
+        double actualResult = movieService.getAverageRating(movie);
 
-        for (var entry : movieService.getMovieListMap().entrySet())
-            expectedResult.put(entry.getKey(),entry.getValue());
+        assertEquals(expectedResult, actualResult);
+    }
 
+    @Test
+    void userShouldGetSortedSet() {
+        Movie movie1 = new Movie("Атака титанов");
+        Movie movie2 = new Movie("Наруто");
+        Movie movie3 = new Movie("Тетрадь смерти");
+        Faker faker = Faker.instance();
+
+        for (var movie : List.of(movie1, movie2, movie3)) {
+            movieAndRatingsListMap.put(movie, new ArrayList<>());
+
+            for (int i = 0; i < 5; i++) {
+                movieService.addRating(movie, new Rating<Integer>(faker.number().numberBetween(1,10)));
+            }
+        }
+
+
+
+        List<Movie> expectedResult = new ArrayList<>(movieAndRatingsListMap.keySet());
+        Collections.sort(expectedResult);
+
+        List<Movie> actualResult = movieService.getSortedByRatingSet().stream().toList();
+
+        assertEquals(expectedResult,actualResult);
+
+    }
+
+    @Test
+    void userShouldGetRatingToMovieTwice() {
+        Movie m1 = new Movie("Наруто");
+        Movie m2 = new Movie("Наруто");
+
+        movieService.addRating(m1,new Rating(5));
+        movieService.addRating(m2,new Rating(1));
+
+        System.out.println(movieAndRatingsListMap);
+    }
+
+    @Test
+    void userShouldAddNewMovie() {
 
     }
 }

@@ -5,10 +5,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
-@AllArgsConstructor
+@Getter
 @EqualsAndHashCode
 @ToString
-@Getter
+@AllArgsConstructor
 public class Rating <T extends Number> {
-    private T grade;
+    private final T rating;
 }
