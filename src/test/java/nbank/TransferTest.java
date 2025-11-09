@@ -1,6 +1,7 @@
 package nbank;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -189,6 +190,16 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_OK);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user1.getAuthToken())
+              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user1.getAccId2()))
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].type", equalTo("TRANSFER_IN"))
+              .body("[0].amount", equalTo(1F));
   }
 
   @Test
@@ -221,6 +232,16 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_OK);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user1.getAuthToken())
+              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user1.getAccId2()))
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].type", equalTo("TRANSFER_IN"))
+              .body("[0].amount", equalTo(5000F));
   }
 
   @Test
@@ -253,6 +274,16 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_OK);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user2.getAccId1()))
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].type", equalTo("TRANSFER_IN"))
+              .body("[0].amount", equalTo(1F));
   }
 
   @Test
@@ -285,6 +316,16 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_OK);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user2.getAccId1()))
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].type", equalTo("TRANSFER_IN"))
+              .body("[0].amount", equalTo(5000F));
   }
 
   @Test
@@ -317,6 +358,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -349,6 +399,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -381,6 +440,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
 
@@ -414,6 +482,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_FORBIDDEN);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -446,6 +523,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -478,6 +564,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -510,6 +605,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -542,6 +646,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -574,6 +687,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -606,6 +728,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -638,6 +769,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -670,6 +810,15 @@ public class TransferTest {
         .post("http://localhost:4111/api/v1/accounts/transfer")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", user2.getAuthToken())
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
 }

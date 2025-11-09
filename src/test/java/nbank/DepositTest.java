@@ -1,6 +1,7 @@
 package nbank;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -141,6 +142,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_OK);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(amount)));
   }
 
 
@@ -214,6 +224,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_FORBIDDEN);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -328,6 +347,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_FORBIDDEN);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @ValueSource(ints = {-1, 0, 5001})
@@ -401,6 +429,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(amount)));
   }
 
   @Test
@@ -473,6 +510,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
 
@@ -546,6 +592,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
   @Test
@@ -618,6 +673,15 @@ public class DepositTest {
         .post("http://localhost:4111/api/v1/accounts/deposit")
         .then()
         .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+      given()
+              .contentType(ContentType.JSON)
+              .accept(ContentType.JSON)
+              .header("Authorization", auth)
+              .get("http://localhost:4111/api/v1/customer/accounts")
+              .then()
+              .statusCode(HttpStatus.SC_OK)
+              .body("[0].balance", equalTo(Float.valueOf(0)));
   }
 
 }
