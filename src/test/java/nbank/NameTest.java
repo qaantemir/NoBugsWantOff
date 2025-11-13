@@ -3,6 +3,7 @@ package nbank;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+import generators.RandomData;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
@@ -11,333 +12,87 @@ import io.restassured.http.ContentType;
 import java.util.List;
 import java.util.stream.Stream;
 
+import models.CreateUserRequest;
+import models.LoginRequest;
+import models.RoleType;
+import models.UpdateNameRequest;
 import org.apache.http.HttpStatus;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import requests.CustomerRequester;
+import requests.LoginRequester;
+import requests.UserRequester;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
-public class NameTest {
-    @BeforeAll
-    public static void setupTests() {
-//    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        RestAssured.filters(
-                List.of(new RequestLoggingFilter(),
-                        new ResponseLoggingFilter())
-        );
-    }
-
-    @BeforeEach
-    public void clearDb() {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "admin",
-                          "password": "admin"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
-
-        var s = given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                .get("http://localhost:4111/api/v1/admin/users")
-                .then()
-                .extract()
-                .response()
-                .body().asString();
-
-        if (!s.equals("[]")) {
-            Integer id = given()
-                    .contentType(ContentType.JSON)
-                    .accept(ContentType.JSON)
-                    .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                    .get("http://localhost:4111/api/v1/admin/users")
-                    .then()
-                    .extract()
-                    .response()
-                    .jsonPath()
-                    .getInt("[0].id");
-
-            given()
-                    .contentType(ContentType.JSON)
-                    .accept(ContentType.JSON)
-                    .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                    .delete("http://localhost:4111/api/v1/admin/users/%d".formatted(id));
-        }
-    }
-
-    private static Stream<Arguments> invalidNames() {
-        return Stream.of(
-                Arguments.of(" ", HttpStatus.SC_BAD_REQUEST),
-                Arguments.of("", HttpStatus.SC_BAD_REQUEST),
-                Arguments.of("a", HttpStatus.SC_BAD_REQUEST),
-                Arguments.of("a B-c", HttpStatus.SC_BAD_REQUEST),
-                Arguments.of("_ B", HttpStatus.SC_BAD_REQUEST)
-        );
-    }
+public class NameTest extends BaseTest {
 
     @Test
-    void nameWithTwoWordsOneSymbolEachShouldBeValid() {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "admin",
-                          "password": "admin"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
+    void nameWithTwoWordsOneSymbolEachShouldBeValid1() {
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest = LoginRequest.builder()
+                .username(createUserRequest.getUsername())
+                .password(createUserRequest.getPassword())
+                .build();
+        UpdateNameRequest updateNameRequest = UpdateNameRequest.builder()
+                .name(RandomData.getValidName())
+                .build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$",
-                          "role": "USER"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/admin/users")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-
-        var auth = given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest);
+        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest)
                 .extract()
                 .header("Authorization");
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .body("""
-                        {
-                          "name": "a B"
-                        }
-                        """)
-                .put("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
+        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .updateCustomerName(updateNameRequest);
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .get("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(HttpStatus.SC_OK)
-                .body("name", equalTo("a B"));
+        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .getCustomerProfile()
+                .body("name", Matchers.equalTo(updateNameRequest.getName()));
+
     }
 
-    @MethodSource("invalidNames")
     @ParameterizedTest
-    void invalidNameShouldReturnFail(String name, int statusCode) {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "name": "admin",
-                          "password": "admin"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
+    @ValueSource(strings = {"", "a", "a B-c", "_ B", "a b c"})
+    void invalidNameShouldReturnFail(String name) {
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest = LoginRequest.builder()
+                .username(createUserRequest.getUsername())
+                .password(createUserRequest.getPassword())
+                .build();
+        UpdateNameRequest updateNameRequest = UpdateNameRequest.builder()
+                .name(name)
+                .build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                .body("""
-                        {
-                          "name": "kate1998",
-                          "password": "verysTRongPassword33$",
-                          "role": "USER"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/admin/users")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-
-        var auth = given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "name": "kate1998",
-                          "password": "verysTRongPassword33$"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest);
+        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest)
                 .extract()
                 .header("Authorization");
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .body("""
-                        {
-                          "name": "%s"
-                        }
-                        """.formatted(name))
-                .put("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(statusCode);
-    }
+        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only"))
+                .updateCustomerName(updateNameRequest);
 
-    @Test
-    void intTypeOfNameShouldReturnFail() {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "admin",
-                          "password": "admin"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
-
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$",
-                          "role": "USER"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/admin/users")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-
-        var auth = given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .extract()
-                .header("Authorization");
-
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .body("""
-                        {
-                          "name": 1
-                        }
-                        """)
-                .put("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(HttpStatus.SC_BAD_REQUEST);
-    }
-
-    @Test
-    void nullValuerOfNameShouldReturnFail() {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "admin",
-                          "password": "admin"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .statusCode(HttpStatus.SC_OK);
-
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$",
-                          "role": "USER"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/admin/users")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-
-        var auth = given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .body("""
-                        {
-                          "username": "kate1998",
-                          "password": "verysTRongPassword33$"
-                        }
-                        """)
-                .post("http://localhost:4111/api/v1/auth/login")
-                .then()
-                .extract()
-                .header("Authorization");
-
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .body("""
-                        {
-                          "name": null
-                        }
-                        """)
-                .put("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", auth)
-                .get("http://localhost:4111/api/v1/customer/profile")
-                .then()
-                .statusCode(HttpStatus.SC_OK)
-                .body("name", is(blankOrNullString()));
-
-
+        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .getCustomerProfile()
+                .body("name", Matchers.nullValue());
     }
 }

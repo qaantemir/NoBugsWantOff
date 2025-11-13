@@ -3,685 +3,219 @@ package nbank;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
+import generators.RandomData;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
+
 import java.util.List;
+import java.util.stream.Stream;
+
+import models.*;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import requests.AccountsRequester;
+import requests.CustomerRequester;
+import requests.LoginRequester;
+import requests.UserRequester;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
-public class DepositTest {
+public class DepositTest extends BaseTest {
 
-  @BeforeAll
-  public static void setupTests() {
-//    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-    RestAssured.filters(
-        List.of(new RequestLoggingFilter(),
-            new ResponseLoggingFilter())
-    );
-  }
+    @ValueSource(doubles = {0.01, 5000.})
+    @ParameterizedTest
+    void validDepositValuesShouldReturnSuccess(double amount) {
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest = LoginRequest.builder()
+                .username(createUserRequest.getUsername())
+                .password(createUserRequest.getPassword())
+                .build();
 
-  @BeforeEach
-  public void clearDb() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest);
+        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest)
+                .extract()
+                .header("Authorization");
 
-    var s = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .get("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .extract()
-        .response()
-        .body().asString();
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
+                .createAccount()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getString("id");
 
-    if (!s.equals("[]")) {
-      Integer id = given()
-          .contentType(ContentType.JSON)
-          .accept(ContentType.JSON)
-          .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-          .get("http://localhost:4111/api/v1/admin/users")
-          .then()
-          .extract()
-          .response()
-          .jsonPath()
-          .getInt("[0].id");
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(Integer.valueOf(accIid))
+                .balance(amount)
+                .build();
 
-      given()
-          .contentType(ContentType.JSON)
-          .accept(ContentType.JSON)
-          .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-          .delete("http://localhost:4111/api/v1/admin/users/%d".formatted(id));
+        new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        var result = new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getDouble("[0].balance");
+        softly.assertThat(result).isEqualTo(depositRequest.getBalance());
     }
-  }
-
-  @ValueSource(ints = {1, 5000})
-  @ParameterizedTest
-  void validDepositValuesShouldReturnSuccess(int amount) {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
-
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
-
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": %d
-            }
-            """.formatted(accIid, amount))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(amount)));
-  }
 
 
-  @Test
-  void validDepositOnNotExistAccountShouldReturnFail() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
+    @Test
+    void validDepositOnNotExistAccountShouldReturnFail() {
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest = LoginRequest.builder()
+                .username(createUserRequest.getUsername())
+                .password(createUserRequest.getPassword())
+                .build();
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest);
+        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest)
+                .extract()
+                .header("Authorization");
 
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
+                .createAccount()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getString("id") + "1";
 
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(Integer.valueOf(accIid))
+                .balance(1)
+                .build();
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": 100,
-              "balance": 1
-            }
-            """)
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN);
+        new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
+                .depositMoney(depositRequest);
+    }
 
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
+    @Test
+    void validDepositOnAlienAccountShouldReturnFail() {
+        CreateUserRequest createUserRequest1 = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest1 = LoginRequest.builder()
+                .username(createUserRequest1.getUsername())
+                .password(createUserRequest1.getPassword())
+                .build();
+        CreateUserRequest createUserRequest2 = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest2 = LoginRequest.builder()
+                .username(createUserRequest2.getUsername())
+                .password(createUserRequest2.getPassword())
+                .build();
 
-  @Test
-  void validDepositOnAlienAccountShouldReturnFail() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest1);
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest2);
+        var authToken1 = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest1)
+                .extract()
+                .header("Authorization");
+        var authToken2 = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest2)
+                .extract()
+                .header("Authorization");
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken2), ResponseSpecs.entityWasCreated())
+                .createAccount()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getString("id");
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1999",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(Integer.valueOf(accIid))
+                .balance(1)
+                .build();
 
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
+        new AccountsRequester(RequestSpecs.userSpec(authToken1), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
+                .depositMoney(depositRequest);
+    }
 
-    given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
+    private static Stream<Arguments> invalidDepositAmounts() {
+        return Stream.of(
+                Arguments.of(-0.11, "Deposit amount must be at least 0.01"),
+                Arguments.of(0, "Deposit amount must be at least 0.01"),
+                Arguments.of(5000.01, "Deposit amount cannot exceed 5000")
+        );
+    }
 
-    var accIid98 = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
+    @MethodSource("invalidDepositAmounts")
+    @ParameterizedTest
+    void invalidDepositValuesShouldReturnFail(double amount, String errorcode) {
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        LoginRequest loginRequest = LoginRequest.builder()
+                .username(createUserRequest.getUsername())
+                .password(createUserRequest.getPassword())
+                .build();
 
-    auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1999",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest);
+        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest)
+                .extract()
+                .header("Authorization");
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": 1
-            }
-            """.formatted(accIid98))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN);
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
+                .createAccount()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getString("id");
 
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(Integer.valueOf(accIid))
+                .balance(amount)
+                .build();
 
-  @ValueSource(ints = {-1, 0, 5001})
-  @ParameterizedTest
-  void invalidDepositValuesShouldReturnFail(int amount) {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
+        new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsBadRequest(errorcode))
+                .depositMoney(depositRequest);
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
-
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
-
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": %d
-            }
-            """.formatted(accIid, amount))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(amount)));
-  }
-
-  @Test
-  void doubleDepositValuesShouldReturnFail() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
-
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
-
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": 0.1
-            }
-            """.formatted(accIid))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-
-  @Test
-  void nullDepositValuesShouldReturnFail() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
-
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
-
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": null
-            }
-            """.formatted(accIid))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void stringDepositValuesShouldReturnFail() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$",
-              "role": "USER"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .assertThat()
-        .statusCode(HttpStatus.SC_CREATED);
-
-    var auth = given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "kate1998",
-              "password": "verysTRongPassword33$"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login")
-        .then()
-        .extract()
-        .header("Authorization");
-
-    var accIid = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", auth)
-        .post("http://localhost:4111/api/v1/accounts")
-        .then()
-        .statusCode(HttpStatus.SC_CREATED)
-        .extract()
-        .response()
-        .body()
-        .jsonPath()
-        .getString("id");
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", auth)
-        .body("""
-            {
-              "id": %s,
-              "balance": "null"
-            }
-            """.formatted(accIid))
-        .post("http://localhost:4111/api/v1/accounts/deposit")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", auth)
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
+        var result = new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract()
+                .response()
+                .body()
+                .jsonPath()
+                .getDouble("[0].balance");
+        softly.assertThat(result).isEqualTo(0);
+    }
 
 }

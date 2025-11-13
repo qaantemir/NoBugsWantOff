@@ -3,15 +3,22 @@ package nbank;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import generators.RandomData;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.response.ResponseBody;
+
 import java.util.List;
 import java.util.stream.Stream;
+
 import lombok.Builder;
 import lombok.Data;
+import lombok.SneakyThrows;
+import models.*;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,817 +27,269 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import requests.AccountsRequester;
+import requests.CustomerRequester;
+import requests.LoginRequester;
+import requests.UserRequester;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
-public class TransferTest {
+public class TransferTest extends BaseTest {
 
-  private static User admin = User.builder()
-      .username("admin")
-      .password("admin")
-      .authToken("Basic YWRtaW46YWRtaW4=")
-      .build();
-  private static User user1 = User.builder()
-      .username("kate0001")
-      .password("verysTRongPassword33$")
-      .build();;
-  private static User user2 = User.builder()
-      .username("kate0002")
-      .password("verysTRongPassword33$")
-      .build();;
+    private AllUserInfo allUserInfo1 = new AllUserInfo();
+    private AllUserInfo allUserInfo2 = new AllUserInfo();
+    private ObjectMapper objectMapper;
 
 
+    @BeforeEach
+    void setupTest() {
+        objectMapper = new ObjectMapper();
+        CreateUserRequest createUserRequest1 = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
+        CreateUserRequest createUserRequest2 = CreateUserRequest.builder()
+                .username(RandomData.getValidUserName())
+                .password(RandomData.getValidPassword())
+                .role(RoleType.USER)
+                .build();
 
+        allUserInfo1.setProfileRequest(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest1)
+                .extract().as(ProfileRequest.class));
+        allUserInfo2.setProfileRequest(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .createUser(createUserRequest2)
+                .extract().as(ProfileRequest.class));
 
+        allUserInfo1.getProfileRequest().setPassword(createUserRequest1.getPassword());
+        allUserInfo2.getProfileRequest().setPassword(createUserRequest2.getPassword());
 
-  @BeforeAll
-  public static void setupTests() {
-    RestAssured.filters(
-        List.of(new RequestLoggingFilter(),
-            new ResponseLoggingFilter())
-    );
-  }
+        LoginRequest loginRequest1 = LoginRequest.builder()
+                .username(allUserInfo1.getProfileRequest().getUsername())
+                .password(allUserInfo1.getProfileRequest().getPassword())
+                .build();
 
-  @BeforeEach
-  void setupTest() {
+        LoginRequest loginRequest2 = LoginRequest.builder()
+                .username(allUserInfo2.getProfileRequest().getUsername())
+                .password(allUserInfo2.getProfileRequest().getPassword())
+                .build();
 
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login");
+        allUserInfo1.setAuthToken(new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest1)
+                .extract().header("Authorization"));
+        allUserInfo2.setAuthToken(new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+                .login(loginRequest2)
+                .extract().header("Authorization"));
 
-    for (var u : List.of(user1, user2)) {
-      given()
-          .contentType(ContentType.JSON)
-          .accept(ContentType.JSON)
-          .header("Authorization", "Basic YWRtaW46YWRtaW4=")
-          .body("""
-              {
-                "username": "%s",
-                "password": "%s",
-                "role": "USER"
-              }
-              """.formatted(u.getUsername(), u.getPassword()))
-          .post("http://localhost:4111/api/v1/admin/users");
+        for (var u : List.of(allUserInfo1, allUserInfo2)) {
+            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.entityWasCreated())
+                    .createAccount();
+            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.entityWasCreated())
+                    .createAccount();
+            u.setProfileRequest(new CustomerRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                    .getCustomerProfile()
+                    .extract()
+                    .body()
+                    .as(ProfileRequest.class));
+        }
     }
-
-    for (var u : List.of(user1, user2)) {
-      u.setAuthToken(given()
-          .contentType(ContentType.JSON)
-          .accept(ContentType.JSON)
-          .body("""
-              {
-                "username": "%s",
-                "password": "%s"
-              }
-              """.formatted(u.getUsername(), u.getPassword()))
-          .post("http://localhost:4111/api/v1/auth/login")
-          .then()
-          .extract()
-          .header("Authorization"));
-    }
-
-    for (var u : List.of(user1, user2)) {
-      u.setAccId1(given()
-          .accept(ContentType.ANY)
-          .header("Authorization", u.getAuthToken())
-          .post("http://localhost:4111/api/v1/accounts")
-          .then()
-          .extract()
-          .response()
-          .body()
-          .jsonPath()
-          .getInt("id"));
-
-      u.setAccId2(given()
-          .accept(ContentType.ANY)
-          .header("Authorization", u.getAuthToken())
-          .post("http://localhost:4111/api/v1/accounts")
-          .then()
-          .extract()
-          .response()
-          .body()
-          .jsonPath()
-          .getInt("id"));
-    }
-  }
-
-  @AfterEach
-  void clearUsers() {
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .body("""
-            {
-              "username": "admin",
-              "password": "admin"
-            }
-            """)
-        .post("http://localhost:4111/api/v1/auth/login");
-
-    ResponseBody rbody = given()
-        .accept(ContentType.ANY)
-        .header("Authorization", admin.getAuthToken())
-        .get("http://localhost:4111/api/v1/admin/users")
-        .then()
-        .extract()
-        .response()
-        .body();
-
-    user1.setId(rbody.jsonPath().getInt("[0].id"));
-    user2.setId(rbody.jsonPath().getInt("[1].id"));
-
-    for (var u : List.of(user1, user2)) {
-      given()
-          .contentType(ContentType.JSON)
-          .accept(ContentType.JSON)
-          .header("Authorization", admin.getAuthToken())
-          .delete("http://localhost:4111/api/v1/admin/users/%d".formatted(u.getId()));
-    }
-  }
 
 //  - Позитив: Перевод между своими существующими аккаунтами, баланс 10000, перевод 1
 //  - Позитив: Перевод между своими существующими аккаунтами, баланс 10000, перевод 10000
 //  - Позитив: Перевод со своего аккаунт на чужой существующий аккаунт, баланс 10000, перевод 1
 //  - Позитив: Перевод со своего аккаунт на чужой существующий аккаунт, баланс 10000, перевод 10000
 
+    @SneakyThrows
+    @ValueSource(doubles = {0.1, 10000.})
+    @ParameterizedTest
+    void transferBetweenOwnerAccountsShouldReturnSuccess(double amount) {
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .balance(5000)
+                .build();
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo1.getProfileRequest().getAccounts().get(1).getId())
+                .amount(amount)
+                .build();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .transferMoney(transferRequest);
+
+        var bo = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract().asPrettyString();
+
+        List<AccountsRequest> accountsRequestList = objectMapper.readValue(bo, new TypeReference<List<AccountsRequest>>() {
+        });
+
+        double resultBalance = accountsRequestList
+                .stream()
+                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .findFirst()
+                .get()
+                .getBalance();
+
+        softly.assertThat(10000 - transferRequest.getAmount()).isEqualTo(resultBalance);
+
+    }
+
+    @SneakyThrows
+    @ValueSource(doubles = {0.1, 10000.})
+    @ParameterizedTest
+    void oneUnitValueShouldBetweenOwnerAndAlienAccountsReturnSuccess(double amount) {
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .balance(5000)
+                .build();
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+                .amount(amount)
+                .build();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        var balanceBeforeAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract().asPrettyString();
+
+
+        List<AccountsRequest> accountsRequestListBefore = objectMapper.readValue(balanceBeforeAsString, new TypeReference<List<AccountsRequest>>() {
+        });
+
+        double balanceBefore = accountsRequestListBefore
+                .stream()
+                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .findFirst()
+                .get()
+                .getBalance();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .transferMoney(transferRequest);
+
+        var balanceAfterAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract().asPrettyString();
+
+        List<AccountsRequest> accountsRequestListAfter = objectMapper.readValue(balanceAfterAsString, new TypeReference<List<AccountsRequest>>() {
+        });
+
+        double balanceAfter = accountsRequestListAfter
+                .stream()
+                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .findFirst()
+                .get()
+                .getBalance();
 
+        softly.assertThat(10000 - transferRequest.getAmount()).isEqualTo(balanceAfter);
+    }
 
-  @Test
-  void oneUnitValueShouldBetweenOwnerAccountsReturnSuccess() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user1.getAccId2(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user1.getAuthToken())
-              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user1.getAccId2()))
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].type", equalTo("TRANSFER_IN"))
-              .body("[0].amount", equalTo(1F));
-  }
-
-  @Test
-  void fiveThousandUnitsBetweenOwnerAccountsShouldReturnSuccess() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user1.getAccId2(), 5000))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user1.getAuthToken())
-              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user1.getAccId2()))
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].type", equalTo("TRANSFER_IN"))
-              .body("[0].amount", equalTo(5000F));
-  }
-
-  @Test
-  void oneUnitValueShouldBetweenOwnerAndAlienAccountsReturnSuccess() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user2.getAccId1()))
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].type", equalTo("TRANSFER_IN"))
-              .body("[0].amount", equalTo(1F));
-  }
-
-  @Test
-  void fiveThousandUnitsBetweenOwnerAndAlienAccountsShouldReturnSuccess() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 5000))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_OK);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/accounts/%d/transactions".formatted(user2.getAccId1()))
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].type", equalTo("TRANSFER_IN"))
-              .body("[0].amount", equalTo(5000F));
-  }
-
-  @Test
-  void transferZeroShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 0))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void transferMoreThan10001ShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 10001))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void transferFromNotExistAccountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1() + 1, user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-
-  @Test
-  void transferToNotExistAccountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user2.getAccId1(), user1.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void transferNegativeValueAccountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user1.getAccId2(), -1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void transferFloatValueAccountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": %f
-            }
-            """.formatted(user1.getAccId1(), user1.getAccId2(), 0.1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void nullValueOnSenderAccountIdShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": null,
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void nullValueOnReceiverAccountIdShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": null,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void nullValueOnAmountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": null
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1()))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void stringValueOnSenderAccountIdShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": "%d",
-              "receiverAccountId": %d,
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void stringValueOnReceiverAccountIdShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": "%d",
-              "amount": %d
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-  @Test
-  void stringValueOnAmountShouldReturnFail() {
-
-    given()
-        .contentType(ContentType.JSON)
-        .accept(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "id": %d,
-              "balance": %d
-            }
-            """.formatted(user1.getAccId1(), 5000))
-        .post("http://localhost:4111/api/v1/accounts/deposit");
-
-    given()
-        .accept(ContentType.JSON)
-        .contentType(ContentType.JSON)
-        .header("Authorization", user1.getAuthToken())
-        .body("""
-            {
-              "senderAccountId": %d,
-              "receiverAccountId": %d,
-              "amount": "%d"
-            }
-            """.formatted(user1.getAccId1(), user2.getAccId1(), 1))
-        .when()
-        .post("http://localhost:4111/api/v1/accounts/transfer")
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST);
-
-      given()
-              .contentType(ContentType.JSON)
-              .accept(ContentType.JSON)
-              .header("Authorization", user2.getAuthToken())
-              .get("http://localhost:4111/api/v1/customer/accounts")
-              .then()
-              .statusCode(HttpStatus.SC_OK)
-              .body("[0].balance", equalTo(Float.valueOf(0)));
-  }
-
-}
-
-@Builder
-@Data
-class User {
-
-  private int id;
-  private String username;
-  private String password;
-  private String authToken;
-  private int accId1;
-  private int accId2;
+    private static Stream<Arguments> invalidTransferValues() {
+        return Stream.of(
+                Arguments.of(-0.1, "Transfer amount must be at least 0.01"),
+                Arguments.of(0, "Transfer amount must be at least 0.01"),
+                Arguments.of(10000.1, "Transfer amount cannot exceed 10000")
+
+        );
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @MethodSource("invalidTransferValues")
+    void transferInvalidTransferValuesShouldReturnFail(double amount, String errorCode) {
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .balance(5000)
+                .build();
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+                .amount(amount)
+                .build();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        var balanceBeforeAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .getCustomerAccounts()
+                .extract().asPrettyString();
+
+
+        List<AccountsRequest> accountsRequestListBefore = objectMapper.readValue(balanceBeforeAsString, new TypeReference<List<AccountsRequest>>() {
+        });
+
+        double balanceBefore = accountsRequestListBefore
+                .stream()
+                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .findFirst()
+                .get()
+                .getBalance();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsBadRequest(errorCode))
+                .transferMoney(transferRequest);
+
+
+    }
+
+    @Test
+    void transferFromNotExistAccountShouldReturnFail() {
+
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .balance(5000)
+                .build();
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().size() + 1)
+                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+                .amount(1)
+                .build();
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
+                .transferMoney(transferRequest);
+    }
+
+
+    @Test
+    void transferToNotExistAccountShouldReturnFail() {
+
+        DepositRequest depositRequest = DepositRequest.builder()
+                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .balance(5000)
+                .build();
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().size() + 1)
+                .amount(1)
+                .build();
+
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
+                .depositMoney(depositRequest);
+
+        new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsBadRequest("Invalid transfer: insufficient funds or invalid accounts"))
+                .transferMoney(transferRequest);
+    }
+
+
 }
