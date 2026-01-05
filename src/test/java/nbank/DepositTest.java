@@ -55,11 +55,11 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getString("id");
+                .as(AccountsRequest.class)
+                .getId();
 
         DepositRequest depositRequest = DepositRequest.builder()
-                .id(Integer.valueOf(accIid))
+                .id(accIid)
                 .balance(amount)
                 .build();
 
@@ -71,8 +71,9 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getDouble("[0].balance");
+                .as(CustomerAccountsResponse.class)
+                .getAccountsRequestList().getFirst().getBalance();
+
         softly.assertThat(result).isEqualTo(depositRequest.getBalance());
     }
 
@@ -101,11 +102,11 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getString("id") + "1";
+                .as(AccountsRequest.class)
+                .getId();
 
         DepositRequest depositRequest = DepositRequest.builder()
-                .id(Integer.valueOf(accIid))
+                .id(accIid)
                 .balance(1)
                 .build();
 
@@ -152,11 +153,11 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getString("id");
+                .as(AccountsRequest.class)
+                .getId();
 
         DepositRequest depositRequest = DepositRequest.builder()
-                .id(Integer.valueOf(accIid))
+                .id(accIid)
                 .balance(1)
                 .build();
 
@@ -197,11 +198,11 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getString("id");
+                .as(AccountsRequest.class)
+                .getId();
 
         DepositRequest depositRequest = DepositRequest.builder()
-                .id(Integer.valueOf(accIid))
+                .id(accIid)
                 .balance(amount)
                 .build();
 
@@ -213,8 +214,8 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .response()
                 .body()
-                .jsonPath()
-                .getDouble("[0].balance");
+                .as(AccountsRequest.class)
+                .getId();
         softly.assertThat(result).isEqualTo(0);
     }
 
