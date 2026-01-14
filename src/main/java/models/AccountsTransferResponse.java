@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateNameRequest extends BaseModel {
-    String name;
+public class AccountsTransferResponse extends BaseModel {
+  private String message;
+  private Long senderAccountId;
+  private Long receiverAccountId;
+  private Double amount;
 }

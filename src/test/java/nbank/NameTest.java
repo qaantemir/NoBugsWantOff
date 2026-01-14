@@ -1,30 +1,16 @@
 package nbank;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 
 import generators.RandomData;
-import io.restassured.RestAssured;
-import io.restassured.filter.log.RequestLoggingFilter;
-import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.http.ContentType;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 import models.CreateUserRequest;
-import models.LoginRequest;
+import models.AuthLoginRequest;
 import models.RoleType;
-import models.UpdateNameRequest;
-import org.apache.http.HttpStatus;
+import models.CustomerProfileRequest;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.CustomerRequester;
 import requests.LoginRequester;
@@ -41,27 +27,27 @@ public class NameTest extends BaseTest {
                 .password(RandomData.getValidPassword())
                 .role(RoleType.USER)
                 .build();
-        LoginRequest loginRequest = LoginRequest.builder()
+        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
                 .username(createUserRequest.getUsername())
                 .password(createUserRequest.getPassword())
                 .build();
-        UpdateNameRequest updateNameRequest = UpdateNameRequest.builder()
+        CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
                 .name(RandomData.getValidName())
                 .build();
 
         new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .createUser(createUserRequest);
         var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(loginRequest)
+                .login(authLoginRequest)
                 .extract()
                 .header("Authorization");
 
         new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
-                .updateCustomerName(updateNameRequest);
+                .updateCustomerName(customerProfileRequest);
 
         new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
                 .getCustomerProfile()
-                .body("name", Matchers.equalTo(updateNameRequest.getName()));
+                .body("name", Matchers.equalTo(customerProfileRequest.getName()));
 
     }
 
@@ -73,23 +59,23 @@ public class NameTest extends BaseTest {
                 .password(RandomData.getValidPassword())
                 .role(RoleType.USER)
                 .build();
-        LoginRequest loginRequest = LoginRequest.builder()
+        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
                 .username(createUserRequest.getUsername())
                 .password(createUserRequest.getPassword())
                 .build();
-        UpdateNameRequest updateNameRequest = UpdateNameRequest.builder()
+        CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
                 .name(name)
                 .build();
 
         new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .createUser(createUserRequest);
         var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(loginRequest)
+                .login(authLoginRequest)
                 .extract()
                 .header("Authorization");
 
         new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only"))
-                .updateCustomerName(updateNameRequest);
+                .updateCustomerName(customerProfileRequest);
 
         new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
                 .getCustomerProfile()

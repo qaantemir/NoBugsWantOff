@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AllUserInfo {
-    CreateUserResponse createUserResponse;
-    String authToken;
+public class AuthLoginRequest extends BaseModel {
+    String username;
+    String password;
 }

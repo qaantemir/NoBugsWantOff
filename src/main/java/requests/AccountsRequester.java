@@ -1,12 +1,10 @@
 package requests;
 
-import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.DepositRequest;
-import models.TransferRequest;
-import org.apache.http.HttpStatus;
+import models.AccountsDepositRequest;
+import models.AccountsTransferRequest;
 
 import static io.restassured.RestAssured.given;
 
@@ -23,19 +21,19 @@ public class AccountsRequester extends BaseRequest {
                 .spec(responseSpecification);
     }
 
-    public ValidatableResponse transferMoney(TransferRequest transferRequest) {
+    public ValidatableResponse transferMoney(AccountsTransferRequest accountsTransferRequest) {
         return given()
                 .spec(requestSpecification)
-                .body(transferRequest)
+                .body(accountsTransferRequest)
                 .post("/api/v1/accounts/transfer")
                 .then()
                 .spec(responseSpecification);
     }
 
-    public ValidatableResponse depositMoney(DepositRequest depositRequest) {
+    public ValidatableResponse depositMoney(AccountsDepositRequest accountsDepositRequest) {
         return given()
                 .spec(requestSpecification)
-                .body(depositRequest)
+                .body(accountsDepositRequest)
                 .post("/api/v1/accounts/deposit")
                 .then()
                 .spec(responseSpecification);

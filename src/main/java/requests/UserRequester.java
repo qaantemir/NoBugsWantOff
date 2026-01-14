@@ -7,7 +7,7 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import lombok.SneakyThrows;
 import models.CreateUserRequest;
-import models.ProfileRequest;
+import models.CreateUserResponse;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class UserRequester extends BaseRequest {
     }
 
     @SneakyThrows
-    public List<ProfileRequest> getAllUsers() {
+    public List<CreateUserResponse> getAllUsers() {
         String body = given()
                 .spec(requestSpecification)
                 .get("/api/v1/admin/users")
@@ -39,7 +39,7 @@ public class UserRequester extends BaseRequest {
 
         ObjectMapper mapper = new ObjectMapper();
 
-        List<ProfileRequest> users = mapper.readValue(body, new TypeReference<List<ProfileRequest>>() {});
+        List<CreateUserResponse> users = mapper.readValue(body, new TypeReference<List<CreateUserResponse>>() {});
 
         return users;
     }
@@ -53,7 +53,7 @@ public class UserRequester extends BaseRequest {
     }
 
     public void deleteAllUsers() {
-        List<Long> userIdsList = getAllUsers().stream().map(ProfileRequest::getId).toList();
+        List<Long> userIdsList = getAllUsers().stream().map(CreateUserResponse::getId).toList();
 
         for (long userId : userIdsList) {
             deleteUser(userId);

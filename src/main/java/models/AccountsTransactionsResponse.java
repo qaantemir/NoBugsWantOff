@@ -12,11 +12,11 @@ import java.util.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TransactionsRequest extends BaseModel {
-    long id;
-    double amount;
+public class AccountsTransactionsResponse extends BaseModel {
+    Long id;
+    Double amount;
     TransactionType type;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "EEE MMM dd HH:mm:ss zzz yyyy", locale = "en")
     Date timestamp;
-    long relatedAccountId;
+    Long relatedAccountId;
 }

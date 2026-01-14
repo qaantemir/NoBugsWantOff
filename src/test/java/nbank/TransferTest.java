@@ -1,27 +1,16 @@
 package nbank;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import generators.RandomData;
-import io.restassured.RestAssured;
-import io.restassured.filter.log.RequestLoggingFilter;
-import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.http.ContentType;
-import io.restassured.response.ResponseBody;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import lombok.Builder;
-import lombok.Data;
 import lombok.SneakyThrows;
 import models.*;
-import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,31 +45,31 @@ public class TransferTest extends BaseTest {
                 .role(RoleType.USER)
                 .build();
 
-        allUserInfo1.setProfileRequest(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        allUserInfo1.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .createUser(createUserRequest1)
-                .extract().as(ProfileRequest.class));
-        allUserInfo2.setProfileRequest(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+                .extract().as(CreateUserResponse.class));
+        allUserInfo2.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .createUser(createUserRequest2)
-                .extract().as(ProfileRequest.class));
+                .extract().as(CreateUserResponse.class));
 
-        allUserInfo1.getProfileRequest().setPassword(createUserRequest1.getPassword());
-        allUserInfo2.getProfileRequest().setPassword(createUserRequest2.getPassword());
+        allUserInfo1.getCreateUserResponse().setPassword(createUserRequest1.getPassword());
+        allUserInfo2.getCreateUserResponse().setPassword(createUserRequest2.getPassword());
 
-        LoginRequest loginRequest1 = LoginRequest.builder()
-                .username(allUserInfo1.getProfileRequest().getUsername())
-                .password(allUserInfo1.getProfileRequest().getPassword())
+        AuthLoginRequest authLoginRequest1 = AuthLoginRequest.builder()
+                .username(allUserInfo1.getCreateUserResponse().getUsername())
+                .password(allUserInfo1.getCreateUserResponse().getPassword())
                 .build();
 
-        LoginRequest loginRequest2 = LoginRequest.builder()
-                .username(allUserInfo2.getProfileRequest().getUsername())
-                .password(allUserInfo2.getProfileRequest().getPassword())
+        AuthLoginRequest authLoginRequest2 = AuthLoginRequest.builder()
+                .username(allUserInfo2.getCreateUserResponse().getUsername())
+                .password(allUserInfo2.getCreateUserResponse().getPassword())
                 .build();
 
         allUserInfo1.setAuthToken(new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(loginRequest1)
+                .login(authLoginRequest1)
                 .extract().header("Authorization"));
         allUserInfo2.setAuthToken(new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(loginRequest2)
+                .login(authLoginRequest2)
                 .extract().header("Authorization"));
 
         for (var u : List.of(allUserInfo1, allUserInfo2)) {
@@ -88,11 +77,11 @@ public class TransferTest extends BaseTest {
                     .createAccount();
             new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.entityWasCreated())
                     .createAccount();
-            u.setProfileRequest(new CustomerRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsOk())
+            u.setCreateUserResponse(new CustomerRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsOk())
                     .getCustomerProfile()
                     .extract()
                     .body()
-                    .as(ProfileRequest.class));
+                    .as(CreateUserResponse.class));
         }
     }
 
@@ -105,25 +94,25 @@ public class TransferTest extends BaseTest {
     @ValueSource(doubles = {0.1, 10000.})
     @ParameterizedTest
     void transferBetweenOwnerAccountsShouldReturnSuccess(double amount) {
-        DepositRequest depositRequest = DepositRequest.builder()
-                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+                .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .balance(5000)
                 .build();
 
-        TransferRequest transferRequest = TransferRequest.builder()
-                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
-                .receiverAccountId(allUserInfo1.getProfileRequest().getAccounts().get(1).getId())
+        AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
+                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(1).getId())
                 .amount(amount)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .transferMoney(transferRequest);
+                .transferMoney(accountsTransferRequest);
 
         var bo = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
                 .getCustomerAccounts()
@@ -134,12 +123,12 @@ public class TransferTest extends BaseTest {
 
         double resultBalance = accountsRequestList
                 .stream()
-                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .filter(a -> a.getId() == allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .findFirst()
                 .get()
                 .getBalance();
 
-        softly.assertThat(10000 - transferRequest.getAmount()).isEqualTo(resultBalance);
+        softly.assertThat(10000 - accountsTransferRequest.getAmount()).isEqualTo(resultBalance);
 
     }
 
@@ -147,22 +136,22 @@ public class TransferTest extends BaseTest {
     @ValueSource(doubles = {0.1, 10000.})
     @ParameterizedTest
     void oneUnitValueShouldBetweenOwnerAndAlienAccountsReturnSuccess(double amount) {
-        DepositRequest depositRequest = DepositRequest.builder()
-                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+                .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .balance(5000)
                 .build();
 
-        TransferRequest transferRequest = TransferRequest.builder()
-                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
-                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+        AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
+                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().get(0).getId())
                 .amount(amount)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         var balanceBeforeAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
                 .getCustomerAccounts()
@@ -174,13 +163,13 @@ public class TransferTest extends BaseTest {
 
         double balanceBefore = accountsRequestListBefore
                 .stream()
-                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .filter(a -> a.getId() == allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .findFirst()
                 .get()
                 .getBalance();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .transferMoney(transferRequest);
+                .transferMoney(accountsTransferRequest);
 
         var balanceAfterAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
                 .getCustomerAccounts()
@@ -191,12 +180,12 @@ public class TransferTest extends BaseTest {
 
         double balanceAfter = accountsRequestListAfter
                 .stream()
-                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .filter(a -> a.getId() == allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .findFirst()
                 .get()
                 .getBalance();
 
-        softly.assertThat(10000 - transferRequest.getAmount()).isEqualTo(balanceAfter);
+        softly.assertThat(10000 - accountsTransferRequest.getAmount()).isEqualTo(balanceAfter);
     }
 
     private static Stream<Arguments> invalidTransferValues() {
@@ -212,22 +201,22 @@ public class TransferTest extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidTransferValues")
     void transferInvalidTransferValuesShouldReturnFail(double amount, String errorCode) {
-        DepositRequest depositRequest = DepositRequest.builder()
-                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+                .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .balance(5000)
                 .build();
 
-        TransferRequest transferRequest = TransferRequest.builder()
-                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
-                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+        AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
+                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().get(0).getId())
                 .amount(amount)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         var balanceBeforeAsString = new CustomerRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
                 .getCustomerAccounts()
@@ -239,13 +228,13 @@ public class TransferTest extends BaseTest {
 
         double balanceBefore = accountsRequestListBefore
                 .stream()
-                .filter(a -> a.getId() == allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+                .filter(a -> a.getId() == allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .findFirst()
                 .get()
                 .getBalance();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsBadRequest(errorCode))
-                .transferMoney(transferRequest);
+                .transferMoney(accountsTransferRequest);
 
 
     }
@@ -253,42 +242,42 @@ public class TransferTest extends BaseTest {
     @Test
     void transferFromNotExistAccountShouldReturnFail() {
 
-        DepositRequest depositRequest = DepositRequest.builder()
-                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+                .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .balance(5000)
                 .build();
 
-        TransferRequest transferRequest = TransferRequest.builder()
-                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().size() + 1)
-                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().get(0).getId())
+        AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
+                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().size() + 1)
+                .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().get(0).getId())
                 .amount(1)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
-                .transferMoney(transferRequest);
+                .transferMoney(accountsTransferRequest);
     }
 
 
     @Test
     void transferToNotExistAccountShouldReturnFail() {
 
-        DepositRequest depositRequest = DepositRequest.builder()
-                .id(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
+        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+                .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
                 .balance(5000)
                 .build();
 
-        TransferRequest transferRequest = TransferRequest.builder()
-                .senderAccountId(allUserInfo1.getProfileRequest().getAccounts().get(0).getId())
-                .receiverAccountId(allUserInfo2.getProfileRequest().getAccounts().size() + 1)
+        AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
+                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
+                .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().size() + 1)
                 .amount(1)
                 .build();
 
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsOk())
-                .depositMoney(depositRequest);
+                .depositMoney(accountsDepositRequest);
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsBadRequest("Invalid transfer: insufficient funds or invalid accounts"))
-                .transferMoney(transferRequest);
+                .transferMoney(accountsTransferRequest);
     }
 
 

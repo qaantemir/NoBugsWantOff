@@ -5,17 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfileRequest extends BaseModel {
-    long id;
-    String username;
-    String password;
+public class CustomerProfileRequest extends BaseModel {
     String name;
-    String role;
-    List<AccountsRequest> accounts;
 }
-

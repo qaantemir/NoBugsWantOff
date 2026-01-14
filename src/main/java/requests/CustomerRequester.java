@@ -1,14 +1,11 @@
 package requests;
 
-import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.UpdateNameRequest;
-import org.apache.http.HttpStatus;
+import models.CustomerProfileRequest;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 
 public class CustomerRequester extends BaseRequest {
     public CustomerRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
@@ -23,10 +20,10 @@ public class CustomerRequester extends BaseRequest {
                 .spec(responseSpecification);
     }
 
-    public ValidatableResponse updateCustomerName(UpdateNameRequest updateNameRequest) {
+    public ValidatableResponse updateCustomerName(CustomerProfileRequest customerProfileRequest) {
         return given()
                 .spec(requestSpecification)
-                .body(updateNameRequest)
+                .body(customerProfileRequest)
                 .put("/api/v1/customer/profile")
                 .then()
                 .spec(responseSpecification);

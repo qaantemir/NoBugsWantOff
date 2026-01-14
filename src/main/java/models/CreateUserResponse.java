@@ -6,14 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccountsRequest extends BaseModel {
+public class CreateUserResponse extends BaseModel {
     Long id;
-    String accountNumber;
-    Double balance;
-    List<AccountsTransactionsResponse> transactions;
+    String username;
+    String password;
+    String name;
+    String role;
+    List<AccountsRequest> accounts;
 }
+
