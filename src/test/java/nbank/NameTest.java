@@ -1,84 +1,62 @@
 package nbank;
 
-import static io.restassured.RestAssured.given;
-
-import generators.RandomData;
-
-import models.CreateUserRequest;
+import generators.TestDataGenerator;
 import models.AuthLoginRequest;
-import models.RoleType;
+import models.CreateUserRequest;
+import models.CreateUserResponse;
 import models.CustomerProfileRequest;
+import models.comparison.ModelAssertions;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.CustomerRequester;
-import requests.LoginRequester;
-import requests.UserRequester;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.NonValidatedRequester;
+import requests.skelethon.requesters.ValidatedRequester;
+import requests.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
 public class NameTest extends BaseTest {
 
-    @Test
-    void nameWithTwoWordsOneSymbolEachShouldBeValid1() {
-        CreateUserRequest createUserRequest = CreateUserRequest.builder()
-                .username(RandomData.getValidUserName())
-                .password(RandomData.getValidPassword())
-                .role(RoleType.USER)
-                .build();
-        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
-                .username(createUserRequest.getUsername())
-                .password(createUserRequest.getPassword())
-                .build();
-        CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
-                .name(RandomData.getValidName())
-                .build();
+  @Test
+  void nameWithTwoWordsOneSymbolEachShouldBeValid1() {
+    CreateUserRequest createUserRequest = AdminSteps.createUser();
+    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(createUserRequest);
+    CustomerProfileRequest customerProfileRequest = TestDataGenerator.generate(CustomerProfileRequest.class);
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
-                .createUser(createUserRequest);
-        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(authLoginRequest)
-                .extract()
-                .header("Authorization");
+    new NonValidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
+        RequestSpecs.authUser(authLoginRequest),
+        ResponseSpecs.requestReturnsOk()
+    ).put(customerProfileRequest);
 
-        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
-                .updateCustomerName(customerProfileRequest);
+    CreateUserResponse createUserResponse = new ValidatedRequester<CreateUserResponse>(
+        Endpoint.GET_CUSTOMER_PROFILE,
+        RequestSpecs.authUser(authLoginRequest),
+        ResponseSpecs.requestReturnsOk()
+    ).get();
 
-        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
-                .getCustomerProfile()
-                .body("name", Matchers.equalTo(customerProfileRequest.getName()));
+    ModelAssertions.assertThatModels(customerProfileRequest, createUserResponse);
+  }
 
-    }
+  @ParameterizedTest
+  @ValueSource(strings = {"", "a", "a B-c", "_ B", "a b c"})
+  void invalidNameShouldReturnFail(String name) {
+    CreateUserRequest createUserRequest = AdminSteps.createUser();
+    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(createUserRequest);
+    CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
+        .name(name)
+        .build();
 
-    @ParameterizedTest
-    @ValueSource(strings = {"", "a", "a B-c", "_ B", "a b c"})
-    void invalidNameShouldReturnFail(String name) {
-        CreateUserRequest createUserRequest = CreateUserRequest.builder()
-                .username(RandomData.getValidUserName())
-                .password(RandomData.getValidPassword())
-                .role(RoleType.USER)
-                .build();
-        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
-                .username(createUserRequest.getUsername())
-                .password(createUserRequest.getPassword())
-                .build();
-        CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
-                .name(name)
-                .build();
+    new NonValidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
+        RequestSpecs.authUser(authLoginRequest),
+        ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only")
+    ).put(customerProfileRequest);
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
-                .createUser(createUserRequest);
-        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(authLoginRequest)
-                .extract()
-                .header("Authorization");
-
-        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only"))
-                .updateCustomerName(customerProfileRequest);
-
-        new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
-                .getCustomerProfile()
-                .body("name", Matchers.nullValue());
-    }
+    new NonValidatedRequester(
+        Endpoint.GET_CUSTOMER_PROFILE,
+        RequestSpecs.authUser(authLoginRequest),
+        ResponseSpecs.requestReturnsOk()
+    ).get().body("name", Matchers.nullValue());;
+  }
 }

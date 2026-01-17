@@ -45,10 +45,10 @@ public class TransferTest extends BaseTest {
                 .role(RoleType.USER)
                 .build();
 
-        allUserInfo1.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        allUserInfo1.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest1)
                 .extract().as(CreateUserResponse.class));
-        allUserInfo2.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        allUserInfo2.setCreateUserResponse(new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest2)
                 .extract().as(CreateUserResponse.class));
 
@@ -73,9 +73,9 @@ public class TransferTest extends BaseTest {
                 .extract().header("Authorization"));
 
         for (var u : List.of(allUserInfo1, allUserInfo2)) {
-            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.entityWasCreated())
+            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsCreated())
                     .createAccount();
-            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.entityWasCreated())
+            new AccountsRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsCreated())
                     .createAccount();
             u.setCreateUserResponse(new CustomerRequester(RequestSpecs.userSpec(u.getAuthToken()), ResponseSpecs.requestReturnsOk())
                     .getCustomerProfile()
@@ -96,7 +96,7 @@ public class TransferTest extends BaseTest {
     void transferBetweenOwnerAccountsShouldReturnSuccess(double amount) {
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .balance(5000)
+                .balance(5000D)
                 .build();
 
         AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
@@ -138,7 +138,7 @@ public class TransferTest extends BaseTest {
     void oneUnitValueShouldBetweenOwnerAndAlienAccountsReturnSuccess(double amount) {
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .balance(5000)
+                .balance(5000D)
                 .build();
 
         AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
@@ -203,7 +203,7 @@ public class TransferTest extends BaseTest {
     void transferInvalidTransferValuesShouldReturnFail(double amount, String errorCode) {
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .balance(5000)
+                .balance(5000D)
                 .build();
 
         AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
@@ -244,13 +244,13 @@ public class TransferTest extends BaseTest {
 
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .balance(5000)
+                .balance(5000D)
                 .build();
 
         AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
-                .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().size() + 1)
+                .senderAccountId((long) allUserInfo1.getCreateUserResponse().getAccounts().size() + 1)
                 .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().get(0).getId())
-                .amount(1)
+                .amount(1D)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(allUserInfo1.getAuthToken()), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
@@ -263,13 +263,13 @@ public class TransferTest extends BaseTest {
 
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .balance(5000)
+                .balance(5000D)
                 .build();
 
         AccountsTransferRequest accountsTransferRequest = AccountsTransferRequest.builder()
                 .senderAccountId(allUserInfo1.getCreateUserResponse().getAccounts().get(0).getId())
-                .receiverAccountId(allUserInfo2.getCreateUserResponse().getAccounts().size() + 1)
-                .amount(1)
+                .receiverAccountId((long) allUserInfo2.getCreateUserResponse().getAccounts().size() + 1)
+                .amount(1D)
                 .build();
 
 

@@ -24,7 +24,7 @@ public abstract class BaseTest {
 
     @AfterEach
     void clearDb() {
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsOk())
-                .deleteAllUsers();
+//        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsOk())
+//                .deleteAllUsers();
     }
 }

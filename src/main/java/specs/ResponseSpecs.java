@@ -1,15 +1,9 @@
 package specs;
 
-import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.builder.ResponseSpecBuilder;
-import io.restassured.filter.log.RequestLoggingFilter;
-import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.http.ContentType;
 import io.restassured.specification.ResponseSpecification;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
-
-import java.util.List;
 
 public class ResponseSpecs {
     private ResponseSpecs() {
@@ -21,7 +15,7 @@ public class ResponseSpecs {
         return new ResponseSpecBuilder();
     }
 
-    public static ResponseSpecification entityWasCreated() {
+    public static ResponseSpecification requestReturnsCreated() {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_CREATED)
                 .build();

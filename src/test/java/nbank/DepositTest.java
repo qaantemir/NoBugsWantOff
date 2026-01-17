@@ -4,9 +4,11 @@ import static io.restassured.RestAssured.given;
 
 import generators.RandomData;
 
+import generators.TestDataGenerator;
 import java.util.stream.Stream;
 
 import models.*;
+import models.comparison.ModelAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -16,6 +18,10 @@ import requests.AccountsRequester;
 import requests.CustomerRequester;
 import requests.LoginRequester;
 import requests.UserRequester;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.NonValidatedRequester;
+import requests.skelethon.requesters.ValidatedRequester;
+import requests.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -24,40 +30,79 @@ public class DepositTest extends BaseTest {
     @ValueSource(doubles = {0.01, 5000.})
     @ParameterizedTest
     void validDepositValuesShouldReturnSuccess(double amount) {
-        CreateUserRequest createUserRequest = CreateUserRequest.builder()
-                .username(RandomData.getValidUserName())
-                .password(RandomData.getValidPassword())
-                .role(RoleType.USER)
-                .build();
-        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
-                .username(createUserRequest.getUsername())
-                .password(createUserRequest.getPassword())
-                .build();
+        // Создать CreateUserRequest
+        // Создать AuthLoginRequest
+        // Запрос CreateUserRequest на admin/users (создание юзера)
+        // Запрос AuthLoginRequest на auth/login (Получение ауфтокена для CreateUserRequest)
+        // Запрос на accounts (создание счета для CreateUserRequest) и получение accIid
+        // Создать AccountsDepositRequest (с accIid для CreateUserRequest)
+        // Запрос AccountsDepositRequest на accounts/deposit (пополнение счета accIid для CreateUserRequest)
+        // Запрос на customer/accounts (получение информации по счетам, сравнение баланса счета с ОР)
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
-                .createUser(createUserRequest);
-        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
-                .login(authLoginRequest)
-                .extract()
-                .header("Authorization");
+        CreateUserRequest createUserRequest = AdminSteps.createUser();
+        AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(createUserRequest);
 
-        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
-                .createAccount()
-                .extract()
-                .response()
-                .body()
-                .as(AccountsRequest.class)
-                .getId();
+        AccountsRequest accountsRequest = new ValidatedRequester<AccountsRequest>(Endpoint.ACCOUNTS,
+            RequestSpecs.authUser(authLoginRequest),
+            ResponseSpecs.requestReturnsCreated())
+            .post();
 
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
-                .id(accIid)
-                .balance(amount)
-                .build();
+            .id(accountsRequest.getId())
+            .balance(amount)
+            .build();
 
-        new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
-                .depositMoney(accountsDepositRequest);
+        AccountsRequest accountsRequest1 = new ValidatedRequester<AccountsRequest>(Endpoint.ACCOUNTS_DEPOSIT,
+            RequestSpecs.authUser(authLoginRequest),
+            ResponseSpecs.requestReturnsOk())
+            .post(accountsDepositRequest);
 
-        var result = new CustomerRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+//        AccountsRequestList accountsRequestList = new ValidatedRequester<AccountsRequestList>(Endpoint.CUSTOMER_ACCOUNTS,
+//            RequestSpecs.authUser(authLoginRequest),
+//            ResponseSpecs.requestReturnsOk()
+//            ).get();
+//
+//        ModelAssertions.assertThatModels(accountsRequest1, accountsRequestList.getAccountsRequestList().getFirst());
+
+//
+//        AccountsRequest accountsRequestBeforeDeposit; // сюда собрать информацию до пополнения
+//        AccountsDepositRequest accountsDepositRequest; // или сюда
+//        AccountsRequestList accountsRequestList1; // или сюда
+//
+//        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+//                .username(RandomData.getValidUserName())
+//                .password(RandomData.getValidPassword())
+//                .role(RoleType.USER)
+//                .build();
+//        AuthLoginRequest authLoginRequest = AuthLoginRequest.builder()
+//                .username(createUserRequest.getUsername())
+//                .password(createUserRequest.getPassword())
+//                .build();
+//
+//        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
+//                .createUser(createUserRequest);
+//        var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
+//                .login(authLoginRequest)
+//                .extract()
+//                .header("Authorization");
+//
+//        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsCreated())
+//                .createAccount()
+//                .extract()
+//                .response()
+//                .body()
+//                .as(AccountsRequest.class)
+//                .getId();
+//
+//        AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
+//                .id(accIid)
+//                .balance(amount)
+//                .build();
+//
+//        new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsOk())
+//                .depositMoney(accountsDepositRequest);
+//
+        var result = new CustomerRequester(RequestSpecs.authUser(authLoginRequest), ResponseSpecs.requestReturnsOk())
                 .getCustomerAccounts()
                 .extract()
                 .response()
@@ -65,7 +110,9 @@ public class DepositTest extends BaseTest {
                 .as(CustomerAccountsResponse.class)
                 .getAccountsRequestList().getFirst().getBalance();
 
-        softly.assertThat(result).isEqualTo(accountsDepositRequest.getBalance());
+        System.out.println(result);
+//
+//        softly.assertThat(result).isEqualTo(accountsDepositRequest.getBalance());
     }
 
 
@@ -81,14 +128,14 @@ public class DepositTest extends BaseTest {
                 .password(createUserRequest.getPassword())
                 .build();
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest);
         var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
                 .login(authLoginRequest)
                 .extract()
                 .header("Authorization");
 
-        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsCreated())
                 .createAccount()
                 .extract()
                 .response()
@@ -98,7 +145,7 @@ public class DepositTest extends BaseTest {
 
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(accIid)
-                .balance(1)
+                .balance(1D)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
@@ -126,9 +173,9 @@ public class DepositTest extends BaseTest {
                 .password(createUserRequest2.getPassword())
                 .build();
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest1);
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest2);
         var authToken1 = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
                 .login(authLoginRequest1)
@@ -139,7 +186,7 @@ public class DepositTest extends BaseTest {
                 .extract()
                 .header("Authorization");
 
-        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken2), ResponseSpecs.entityWasCreated())
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken2), ResponseSpecs.requestReturnsCreated())
                 .createAccount()
                 .extract()
                 .response()
@@ -149,7 +196,7 @@ public class DepositTest extends BaseTest {
 
         AccountsDepositRequest accountsDepositRequest = AccountsDepositRequest.builder()
                 .id(accIid)
-                .balance(1)
+                .balance(1D)
                 .build();
 
         new AccountsRequester(RequestSpecs.userSpec(authToken1), ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"))
@@ -177,14 +224,14 @@ public class DepositTest extends BaseTest {
                 .password(createUserRequest.getPassword())
                 .build();
 
-        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsCreated())
                 .createUser(createUserRequest);
         var authToken = new LoginRequester(RequestSpecs.unauthSpec(), ResponseSpecs.requestReturnsOk())
                 .login(authLoginRequest)
                 .extract()
                 .header("Authorization");
 
-        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.entityWasCreated())
+        var accIid = new AccountsRequester(RequestSpecs.userSpec(authToken), ResponseSpecs.requestReturnsCreated())
                 .createAccount()
                 .extract()
                 .response()

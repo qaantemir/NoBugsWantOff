@@ -1,9 +1,11 @@
 package requests.skelethon;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import models.AccountsDepositRequest;
 import models.AccountsRequest;
+import models.AccountsRequestList;
 import models.AccountsTransactionsResponse;
 import models.AccountsTransferRequest;
 import models.AccountsTransferResponse;
@@ -12,24 +14,38 @@ import models.AuthLoginResponse;
 import models.BaseModel;
 import models.CreateUserRequest;
 import models.CreateUserResponse;
+import models.CreateUserResponseList;
 import models.CustomerProfileRequest;
+import models.CustomerProfileResponse;
+import models.MockModel;
 
 @Getter
 @AllArgsConstructor
 public enum Endpoint {
-  /**
-   * При запросе POST вернется CreateUserResponse
-   * При запросе GET вернется массив CreateUserResponse
-   * При запросе DELETE вернется просто текст
-   */
-  ADMIN_USERS(
+  GET_ADMIN_USERS(
+      "/admin/users",
+      CreateUserRequest.class,
+      CreateUserResponseList.class
+  ),
+  POST_ADMIN_USERS(
       "/admin/users",
       CreateUserRequest.class,
       CreateUserResponse.class
   ),
+  /**
+   * При запросе DELETE в теле ответа вернется просто text/application
+   */
+  DELETE_ADMIN_USERS(
+      "/admin/users",
+      CreateUserRequest.class,
+      MockModel.class
+  ),
+  /**
+   * Тело запроса пустое
+   */
   ACCOUNTS(
       "/accounts",
-      BaseModel.class,
+      MockModel.class,
       AccountsRequest.class
   ),
   ACCOUNTS_TRANSFER(
@@ -42,9 +58,13 @@ public enum Endpoint {
       AccountsDepositRequest.class,
       AccountsRequest.class
   ),
+  /**
+   * Тело запроса пустое
+   * Требуется указать path param id
+   */
   ACCOUNTS_TRANSACTIONS(
       "accounts/%s/transactions",
-      BaseModel.class,
+      MockModel.class,
       AccountsTransactionsResponse.class
   ),
   AUTH_LOGIN(
@@ -52,22 +72,23 @@ public enum Endpoint {
       AuthLoginRequest.class,
       AuthLoginResponse.class
   ),
-  /**
-   * При запросе GET вернется CreateUserResponse
-   * При запросе PUT вернется CustomerProfileResponse
-   */
-  CUSTOMER_PROFILE(
+  GET_CUSTOMER_PROFILE(
+      "customer/profile",
+      BaseModel.class,
+      CreateUserResponse.class
+  ),
+  PUT_CUSTOMER_PROFILE(
       "customer/profile",
       CustomerProfileRequest.class,
-      CreateUserResponse.class //
+      CustomerProfileResponse.class
   ),
   /**
-   * На самом деле возвращается массив из AccountsRequest
+   * Тело запроса пустое
    */
   CUSTOMER_ACCOUNTS(
       "customer/accounts",
-      BaseModel.class,
-      AccountsRequest.class
+      MockModel.class,
+      AccountsRequestList.class
   );
 
   private String url;

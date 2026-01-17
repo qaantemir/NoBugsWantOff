@@ -1,7 +1,7 @@
-import requests.UserRequester;
+import generators.TestDataGenerator;
+import models.CreateUserRequest;
+import models.CustomerProfileRequest;
 import requests.skelethon.Endpoint;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
 
 public class Main {
 
@@ -13,6 +13,10 @@ public class Main {
     System.out.println(e.getUrl());
 
     System.out.println("accounts/%s/transactions".formatted("1"));
+
+//    System.out.println(TestDataGenerator.generate(CreateUserRequest.class));
+    System.out.println(TestDataGenerator.generate(CustomerProfileRequest.class));
+
 
   }
 }

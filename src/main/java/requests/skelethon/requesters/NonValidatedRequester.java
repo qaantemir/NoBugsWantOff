@@ -6,6 +6,7 @@ import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.BaseModel;
+import models.MockModel;
 import requests.skelethon.Endpoint;
 import requests.skelethon.HttpRequest;
 import requests.skelethon.interfaces.CrudEndpointInterface;
@@ -47,9 +48,13 @@ public class NonValidatedRequester extends HttpRequest implements CrudEndpointIn
 
   @Override
   public ValidatableResponse post(BaseModel model) {
+    var body = model == null  ? "" : model;
+
+    System.out.println(model.toString());
+    System.out.println(endpoint.getUrl());
     return given()
         .spec(requestSpecification)
-        .body(model)
+        .body(body)
         .post(endpoint.getUrl())
         .then()
         .spec(responseSpecification);
@@ -57,9 +62,10 @@ public class NonValidatedRequester extends HttpRequest implements CrudEndpointIn
 
   @Override
   public ValidatableResponse put(BaseModel model) {
+    var body = model == null  ? "" : model;
     return given()
         .spec(requestSpecification)
-        .body(model)
+        .body(body)
         .put(endpoint.getUrl())
         .then()
         .spec(responseSpecification);

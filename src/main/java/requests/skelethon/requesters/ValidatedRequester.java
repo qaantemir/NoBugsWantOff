@@ -1,12 +1,8 @@
 package requests.skelethon.requesters;
 
-import static io.restassured.RestAssured.given;
-
-import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.BaseModel;
-import requests.BaseRequest;
 import requests.skelethon.Endpoint;
 import requests.skelethon.HttpRequest;
 import requests.skelethon.interfaces.CrudEndpointInterface;
@@ -28,49 +24,28 @@ public class ValidatedRequester<M extends BaseModel> extends HttpRequest impleme
   }
 
   @Override
-  public ValidatableResponse get(Long id) {
-    return given()
-        .spec(requestSpecification)
-        .get(endpoint.getUrl().formatted(id.toString()))
-        .then()
-        .spec(responseSpecification);
+  public M get(Long id) {
+    return (M) nonValidatedRequester.get(id).extract().as(endpoint.getResponseModel());
   }
 
   @Override
-  public ValidatableResponse post() {
-    return given()
-        .spec(requestSpecification)
-        .post(endpoint.getUrl())
-        .then()
-        .spec(responseSpecification);
+  public M post() {
+    return (M) nonValidatedRequester.post().extract().as(endpoint.getResponseModel());
+
   }
 
   @Override
-  public ValidatableResponse post(BaseModel model) {
-    return given()
-        .spec(requestSpecification)
-        .body(model)
-        .post(endpoint.getUrl())
-        .then()
-        .spec(responseSpecification);
+  public M post(BaseModel model) {
+    return (M) nonValidatedRequester.post(model).extract().as(endpoint.getResponseModel());
   }
 
   @Override
-  public ValidatableResponse put(BaseModel model) {
-    return given()
-        .spec(requestSpecification)
-        .body(model)
-        .put(endpoint.getUrl())
-        .then()
-        .spec(responseSpecification);
+  public M put(BaseModel model) {
+    return (M) nonValidatedRequester.put(model).extract().as(endpoint.getResponseModel());
   }
 
   @Override
-  public ValidatableResponse delete(Long id) {
-    return given()
-        .spec(requestSpecification)
-        .delete(endpoint.getUrl() + "/" + id.toString())
-        .then()
-        .spec(responseSpecification);
+  public String delete(Long id) {
+    return nonValidatedRequester.delete(id).extract().as(String.class);
   }
 }

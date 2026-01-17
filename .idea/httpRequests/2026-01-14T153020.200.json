@@ -1,0 +1,44 @@
+[
+  {
+    "id": 2,
+    "accountNumber": "ACC2",
+    "balance": 25.0,
+    "transactions": [
+      {
+        "id": 3,
+        "amount": 25.0,
+        "type": "TRANSFER_IN",
+        "timestamp": "Wed Jan 14 11:44:46 UTC 2026",
+        "relatedAccountId": 1
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "accountNumber": "ACC1",
+    "balance": 175.0,
+    "transactions": [
+      {
+        "id": 1,
+        "amount": 100.0,
+        "type": "DEPOSIT",
+        "timestamp": "Wed Jan 14 11:44:22 UTC 2026",
+        "relatedAccountId": 1
+      },
+      {
+        "id": 4,
+        "amount": 100.0,
+        "type": "DEPOSIT",
+        "timestamp": "Wed Jan 14 12:20:40 UTC 2026",
+        "relatedAccountId": 1
+      },
+      {
+        "id": 2,
+        "amount": 25.0,
+        "type": "TRANSFER_OUT",
+        "timestamp": "Wed Jan 14 11:44:46 UTC 2026",
+        "relatedAccountId": 2
+      }
+    ]
+  }
+]
