@@ -1,11 +1,9 @@
 package requests.skelethon;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import models.AccountsDepositRequest;
 import models.AccountsRequest;
-import models.AccountsRequestList;
 import models.AccountsTransactionsResponse;
 import models.AccountsTransferRequest;
 import models.AccountsTransferResponse;
@@ -14,7 +12,6 @@ import models.AuthLoginResponse;
 import models.BaseModel;
 import models.CreateUserRequest;
 import models.CreateUserResponse;
-import models.CreateUserResponseList;
 import models.CustomerProfileRequest;
 import models.CustomerProfileResponse;
 import models.MockModel;
@@ -22,10 +19,14 @@ import models.MockModel;
 @Getter
 @AllArgsConstructor
 public enum Endpoint {
+  /**
+   * Тело запроса пустое
+   * Возвращается массив из объектов CreateUserResponse
+   */
   GET_ADMIN_USERS(
       "/admin/users",
       CreateUserRequest.class,
-      CreateUserResponseList.class
+      CreateUserResponse.class
   ),
   POST_ADMIN_USERS(
       "/admin/users",
@@ -36,8 +37,8 @@ public enum Endpoint {
    * При запросе DELETE в теле ответа вернется просто text/application
    */
   DELETE_ADMIN_USERS(
-      "/admin/users",
-      CreateUserRequest.class,
+      "/admin/users/%s",
+      MockModel.class,
       MockModel.class
   ),
   /**
@@ -59,8 +60,7 @@ public enum Endpoint {
       AccountsRequest.class
   ),
   /**
-   * Тело запроса пустое
-   * Требуется указать path param id
+   * Тело запроса пустое Требуется указать path param id
    */
   ACCOUNTS_TRANSACTIONS(
       "accounts/%s/transactions",
@@ -84,11 +84,12 @@ public enum Endpoint {
   ),
   /**
    * Тело запроса пустое
+   * Возвращается массив из объектов AccountsRequest
    */
   CUSTOMER_ACCOUNTS(
       "customer/accounts",
       MockModel.class,
-      AccountsRequestList.class
+      AccountsRequest.class
   );
 
   private String url;

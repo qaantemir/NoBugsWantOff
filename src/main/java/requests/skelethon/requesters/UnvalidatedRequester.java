@@ -6,14 +6,13 @@ import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.BaseModel;
-import models.MockModel;
 import requests.skelethon.Endpoint;
 import requests.skelethon.HttpRequest;
 import requests.skelethon.interfaces.CrudEndpointInterface;
 
-public class NonValidatedRequester extends HttpRequest implements CrudEndpointInterface {
+public class UnvalidatedRequester extends HttpRequest implements CrudEndpointInterface {
 
-  public NonValidatedRequester(Endpoint endpoint,
+  public UnvalidatedRequester(Endpoint endpoint,
       RequestSpecification requestSpecification,
       ResponseSpecification responseSpecification) {
     super(endpoint, requestSpecification, responseSpecification);
@@ -75,7 +74,7 @@ public class NonValidatedRequester extends HttpRequest implements CrudEndpointIn
   public ValidatableResponse delete(Long id) {
     return given()
         .spec(requestSpecification)
-        .delete(endpoint.getUrl() + "/" + id.toString())
+        .delete(endpoint.getUrl().formatted(id))
         .then()
         .spec(responseSpecification);
   }

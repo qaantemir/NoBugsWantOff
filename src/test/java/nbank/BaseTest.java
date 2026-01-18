@@ -3,11 +3,7 @@ package nbank;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import requests.UserRequester;
-import requests.skelethon.Endpoint;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import requests.steps.AdminSteps;
 
 public abstract class BaseTest {
     SoftAssertions softly;
@@ -24,7 +20,6 @@ public abstract class BaseTest {
 
     @AfterEach
     void clearDb() {
-//        new UserRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsOk())
-//                .deleteAllUsers();
+        AdminSteps.deleteAllUsers();
     }
 }

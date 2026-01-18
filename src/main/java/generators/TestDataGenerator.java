@@ -7,6 +7,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 import lombok.SneakyThrows;
+import models.AccountsDepositRequest;
+import models.AccountsTransferRequest;
 import models.AuthLoginRequest;
 import models.CreateUserRequest;
 import models.RoleType;
@@ -139,5 +141,40 @@ public class TestDataGenerator {
           .password(createUserRequest.getPassword())
           .build();
     }
+
+    public static AccountsDepositRequest getAccountsDepositRequest(Long accountId, Double amount) {
+      return AccountsDepositRequest.builder()
+          .id(accountId)
+          .balance(amount)
+          .build();
+    }
+
+    public static AccountsTransferRequest getAccountsTransferRequest(Long senderAccountId, Long receiverAccountId, Double amount) {
+      return AccountsTransferRequest.builder()
+          .senderAccountId(senderAccountId)
+          .receiverAccountId(receiverAccountId)
+          .amount(amount)
+          .build();
+    }
+
+
+
   }
+
+  public static class RandomData {
+    public static Long getRandomLong() {
+      return new Random().longs(0, Long.MAX_VALUE).findAny().getAsLong();
+    }
+
+    public static AccountsDepositRequest getAccountsDepositRequest(Long id, Double amount) {
+      return AccountsDepositRequest.builder()
+          .id(id)
+          .balance(amount)
+          .build();
+    }
+
+
+  }
+
+
 }

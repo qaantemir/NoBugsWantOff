@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.NonValidatedRequester;
+import requests.skelethon.requesters.UnvalidatedRequester;
 import requests.skelethon.requesters.ValidatedRequester;
 import requests.steps.AdminSteps;
 import specs.RequestSpecs;
@@ -22,10 +22,12 @@ public class NameTest extends BaseTest {
   @Test
   void nameWithTwoWordsOneSymbolEachShouldBeValid1() {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
-    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(createUserRequest);
-    CustomerProfileRequest customerProfileRequest = TestDataGenerator.generate(CustomerProfileRequest.class);
+    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
+        createUserRequest);
+    CustomerProfileRequest customerProfileRequest = TestDataGenerator.generate(
+        CustomerProfileRequest.class);
 
-    new NonValidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
+    new UnvalidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
         RequestSpecs.authUser(authLoginRequest),
         ResponseSpecs.requestReturnsOk()
     ).put(customerProfileRequest);
@@ -43,20 +45,22 @@ public class NameTest extends BaseTest {
   @ValueSource(strings = {"", "a", "a B-c", "_ B", "a b c"})
   void invalidNameShouldReturnFail(String name) {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
-    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(createUserRequest);
+    AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
+        createUserRequest);
     CustomerProfileRequest customerProfileRequest = CustomerProfileRequest.builder()
         .name(name)
         .build();
 
-    new NonValidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
+    new UnvalidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
         RequestSpecs.authUser(authLoginRequest),
         ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only")
     ).put(customerProfileRequest);
 
-    new NonValidatedRequester(
+    new UnvalidatedRequester(
         Endpoint.GET_CUSTOMER_PROFILE,
         RequestSpecs.authUser(authLoginRequest),
         ResponseSpecs.requestReturnsOk()
-    ).get().body("name", Matchers.nullValue());;
+    ).get().body("name", Matchers.nullValue());
+    ;
   }
 }

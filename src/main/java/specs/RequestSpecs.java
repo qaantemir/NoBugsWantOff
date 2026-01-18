@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import models.AuthLoginRequest;
 import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.NonValidatedRequester;
+import requests.skelethon.requesters.UnvalidatedRequester;
 
 public class RequestSpecs {
 
@@ -35,6 +35,15 @@ public class RequestSpecs {
         .setBaseUri(Config.getProperty("url") + Config.getProperty("apiVersion"));
   }
 
+//  private static RequestSpecBuilder defaultRequestBuilder() {
+//    return new RequestSpecBuilder()
+//        .setAccept(ContentType.JSON)
+//        .setContentType(ContentType.JSON)
+//        .addFilters(List.of(new RequestLoggingFilter(),
+//            new ResponseLoggingFilter()))
+//        .setBaseUri("http://localhost:4111");
+//  }
+
   public static RequestSpecification unauthSpec() {
     return defaultRequestBuilder().build();
   }
@@ -50,7 +59,7 @@ public class RequestSpecs {
     if (authHeaders.containsKey(authLoginRequest.getUsername())) {
       token = authHeaders.get(authLoginRequest.getUsername());
     } else {
-      token = new NonValidatedRequester(Endpoint.AUTH_LOGIN, unauthSpec(), ResponseSpecs.requestReturnsOk())
+      token = new UnvalidatedRequester(Endpoint.AUTH_LOGIN, unauthSpec(), ResponseSpecs.requestReturnsOk())
           .post(authLoginRequest)
           .extract()
           .header("Authorization");
