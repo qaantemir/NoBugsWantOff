@@ -15,16 +15,11 @@ import requests.skelethon.requesters.UnvalidatedRequester;
 
 public class RequestSpecs {
 
-  private final static RequestSpecs INSTANCE = new RequestSpecs() {
-  };
-  // TODO возможно потребуется метод с доступом к хедерам по юзернейму
+  private final static RequestSpecs INSTANCE = new RequestSpecs() {};
   private final static Map<String, String> authHeaders = new HashMap<>(
       Map.of("admin", "Basic YWRtaW46YWRtaW4="));
 
-  private RequestSpecs() {
-  }
-
-  ;
+  private RequestSpecs() {};
 
   private static RequestSpecBuilder defaultRequestBuilder() {
     return new RequestSpecBuilder()
@@ -34,15 +29,6 @@ public class RequestSpecs {
             new ResponseLoggingFilter()))
         .setBaseUri(Config.getProperty("url") + Config.getProperty("apiVersion"));
   }
-
-//  private static RequestSpecBuilder defaultRequestBuilder() {
-//    return new RequestSpecBuilder()
-//        .setAccept(ContentType.JSON)
-//        .setContentType(ContentType.JSON)
-//        .addFilters(List.of(new RequestLoggingFilter(),
-//            new ResponseLoggingFilter()))
-//        .setBaseUri("http://localhost:4111");
-//  }
 
   public static RequestSpecification unauthSpec() {
     return defaultRequestBuilder().build();
@@ -75,6 +61,4 @@ public class RequestSpecs {
         .addHeader("Authorization", authToken)
         .build();
   }
-
-
 }

@@ -14,6 +14,7 @@ import requests.skelethon.Endpoint;
 import requests.skelethon.requesters.UnvalidatedRequester;
 import requests.skelethon.requesters.ValidatedRequester;
 import requests.steps.AdminSteps;
+import specs.ErrorCode;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -53,14 +54,16 @@ public class NameTest extends BaseTest {
 
     new UnvalidatedRequester(Endpoint.PUT_CUSTOMER_PROFILE,
         RequestSpecs.authUser(authLoginRequest),
-        ResponseSpecs.requestReturnsBadRequest("Name must contain two words with letters only")
+        ResponseSpecs.requestReturnsBadRequest(ErrorCode.CUSTOMER_PROFILE_BAD_REQUEST_NAME_MUST_CONTAIN)
     ).put(customerProfileRequest);
 
-    new UnvalidatedRequester(
+    var actualName = new ValidatedRequester<CreateUserResponse>(
         Endpoint.GET_CUSTOMER_PROFILE,
         RequestSpecs.authUser(authLoginRequest),
         ResponseSpecs.requestReturnsOk()
-    ).get().body("name", Matchers.nullValue());
+    ).get().getName();
+
+    softly.assertThat(actualName).isNull();
     ;
   }
 }

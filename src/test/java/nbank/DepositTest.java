@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import requests.steps.AccountsSteps;
 import requests.steps.AdminSteps;
 import requests.steps.CustomerSteps;
+import specs.ErrorCode;
 import specs.ResponseSpecs;
 
 public class DepositTest extends BaseTest {
@@ -54,7 +55,7 @@ public class DepositTest extends BaseTest {
 
     AccountsSteps.depositMoneyWithUnvalidatedResponse(authLoginRequest,
         accountsDepositRequest,
-        ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"));
+        ResponseSpecs.requestReturnsForbidden(ErrorCode.FORBIDDEN_UNAUTHORIZED_ACCESS));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 
@@ -63,15 +64,15 @@ public class DepositTest extends BaseTest {
 
   private static Stream<Arguments> invalidDepositAmounts() {
     return Stream.of(
-        Arguments.of(-0.11, "Deposit amount must be at least 0.01"),
-        Arguments.of(0, "Deposit amount must be at least 0.01"),
-        Arguments.of(5000.01, "Deposit amount cannot exceed 5000")
+        Arguments.of(-0.11, ErrorCode.ACCOUNT_DEPOSIT_BAD_REQUEST_DEPOSIT_AMOUNT_MUST_BE_AT_LEAST),
+        Arguments.of(0, ErrorCode.ACCOUNT_DEPOSIT_BAD_REQUEST_DEPOSIT_AMOUNT_MUST_BE_AT_LEAST),
+        Arguments.of(5000.01, ErrorCode.ACCOUNT_DEPOSIT_BAD_REQUEST_DEPOSIT_AMOUNT_CANNOT_EXCEED)
     );
   }
 
   @MethodSource("invalidDepositAmounts")
   @ParameterizedTest
-  void invalidDepositValuesShouldReturnFail(double amount, String errorcode) {
+  void invalidDepositValuesShouldReturnFail(double amount, ErrorCode errorcode) {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
 
     AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(

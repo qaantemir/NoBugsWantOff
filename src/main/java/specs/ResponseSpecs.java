@@ -6,10 +6,7 @@ import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 
 public class ResponseSpecs {
-    private ResponseSpecs() {
-    }
-
-    ;
+    private ResponseSpecs() {};
 
     private static ResponseSpecBuilder defaultResponseBuilder() {
         return new ResponseSpecBuilder();
@@ -27,32 +24,31 @@ public class ResponseSpecs {
                 .build();
     }
 
-    public static ResponseSpecification requestReturnsNotFound(String errorKey, String errorCode) {
+    public static ResponseSpecification requestReturnsNotFound(String errorKey, ErrorCode errorCode) {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_NOT_FOUND)
-                .expectBody(errorKey, Matchers.equalTo(errorCode))
+                .expectBody(errorKey, Matchers.equalTo(errorCode.getErrorCode()))
                 .build();
     }
 
-    public static ResponseSpecification requestReturnsBadRequest(String errorCode) {
+    public static ResponseSpecification requestReturnsBadRequest(ErrorCode errorCode) {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
-                .expectBody(Matchers.equalTo(errorCode))
+                .expectBody(Matchers.equalTo(errorCode.getErrorCode()))
                 .build();
     }
 
-    public static ResponseSpecification requestReturnsForbidden(String errorCode) {
+    public static ResponseSpecification requestReturnsForbidden(ErrorCode errorCode) {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_FORBIDDEN)
-                .expectBody(Matchers.equalTo(errorCode))
+                .expectBody(Matchers.equalTo(errorCode.getErrorCode()))
                 .build();
     }
 
-    public static ResponseSpecification requestReturnsUnauthorized(String errorKey, String errorCode) {
+    public static ResponseSpecification requestReturnsUnauthorized(String errorKey, ErrorCode errorCode) {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_UNAUTHORIZED)
-                .expectBody(errorKey, Matchers.equalTo(errorCode))
+                .expectBody(errorKey, Matchers.equalTo(errorCode.getErrorCode()))
                 .build();
     }
-
 }

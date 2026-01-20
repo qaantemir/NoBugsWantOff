@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import requests.steps.AccountsSteps;
 import requests.steps.AdminSteps;
 import requests.steps.CustomerSteps;
+import specs.ErrorCode;
 import specs.ResponseSpecs;
 
 public class TransferTest extends BaseTest {
@@ -95,17 +96,16 @@ public class TransferTest extends BaseTest {
 
   private static Stream<Arguments> invalidTransferValues() {
     return Stream.of(
-        Arguments.of(-0.1, "Transfer amount must be at least 0.01"),
-        Arguments.of(0, "Transfer amount must be at least 0.01"),
-        Arguments.of(10000.1, "Transfer amount cannot exceed 10000")
-
+        Arguments.of(-0.1, ErrorCode.ACCOUNT_TRANSFER_BAD_REQUEST_DEPOSIR_AMOUNT_MUST_BE_AT_LEAST),
+        Arguments.of(0, ErrorCode.ACCOUNT_TRANSFER_BAD_REQUEST_DEPOSIR_AMOUNT_MUST_BE_AT_LEAST),
+        Arguments.of(10000.1, ErrorCode.ACCOUNT_DEPOSIT_BAD_REQUEST_DEPOSIT_AMOUNT_CANNOT_EXCEED)
     );
   }
 
   @SneakyThrows
   @ParameterizedTest
   @MethodSource("invalidTransferValues")
-  void transferInvalidTransferValuesShouldReturnFail(double amount, String errorCode) {
+  void transferInvalidTransferValuesShouldReturnFail(double amount, ErrorCode errorCode) {
     Long senderAccountId = createUserResponse1.getAccounts().getFirst().getId();
     Long receiverAccountId = createUserResponse2.getAccounts().getFirst().getId();
 
@@ -136,7 +136,7 @@ public class TransferTest extends BaseTest {
         senderAccountId, receiverAccountId, 1.);
 
     AccountsSteps.transferMoneyWithUnvalidatedResponse(authLoginRequest1, accountsTransferRequest,
-        ResponseSpecs.requestReturnsForbidden("Unauthorized access to account"));
+        ResponseSpecs.requestReturnsForbidden(ErrorCode.FORBIDDEN_UNAUTHORIZED_ACCESS));
 
     CreateUserResponse createUserResponseAfterTransfer = CustomerSteps.getCustomerProfiles(
         authLoginRequest2);
@@ -160,8 +160,7 @@ public class TransferTest extends BaseTest {
     AccountsSteps.depositMoneyWithValidatedResponse(authLoginRequest1, accountsDepositRequest);
 
     AccountsSteps.transferMoneyWithUnvalidatedResponse(authLoginRequest1, accountsTransferRequest,
-        ResponseSpecs.requestReturnsBadRequest(
-            "Invalid transfer: insufficient funds or invalid accounts"));
+        ResponseSpecs.requestReturnsBadRequest(ErrorCode.ACCOUNT_TRANSFER_BAD_REQUEST_INVALID_TRANSFER));
 
     CreateUserResponse createUserResponseAfterTransfer = CustomerSteps.getCustomerProfiles(
         authLoginRequest2);
