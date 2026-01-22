@@ -1,4 +1,4 @@
-package nbank;
+package nbank.api;
 
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;

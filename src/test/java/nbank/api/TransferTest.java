@@ -1,4 +1,4 @@
-package nbank;
+package nbank.api;
 
 import generators.TestDataGenerator;
 import java.util.stream.Stream;

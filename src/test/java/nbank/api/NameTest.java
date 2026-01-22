@@ -1,4 +1,4 @@
-package nbank;
+package nbank.api;
 
 import generators.TestDataGenerator;
 import models.AuthLoginRequest;
@@ -6,7 +6,6 @@ import models.CreateUserRequest;
 import models.CreateUserResponse;
 import models.CustomerProfileRequest;
 import models.comparison.ModelAssertions;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
