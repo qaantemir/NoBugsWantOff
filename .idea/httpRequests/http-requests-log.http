@@ -1,0 +1,631 @@
+GET http://localhost:4111/api/v1/customer/accounts
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+<> 2026-01-14T153020.200.json
+
+###
+
+PUT http://localhost:4111/api/v1/customer/profile
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 25
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "name": "Julia Bay"
+}
+
+<> 2026-01-14T152300.200.json
+
+###
+
+PUT http://localhost:4111/api/v1/customer/profile
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 21
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "name": "Julia"
+}
+
+<> 2026-01-14T152250.400.json
+
+###
+
+GET http://localhost:4111/api/v1/customer/profile
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+<> 2026-01-14T152131.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 31
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "balance": 100
+}
+
+<> 2026-01-14T152040.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/transfer
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 21
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "name": "Julia"
+}
+
+<> 2026-01-14T152016.500.json
+
+###
+
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+Content-Length: 65
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+<> 2026-01-14T151531.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/transfer
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 68
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "senderAccountId": 1,
+  "receiverAccountId": 2,
+  "amount": 25
+}
+
+<> 2026-01-14T144446.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/transfer
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 68
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "senderAccountId": 1,
+  "receiverAccountId": 2,
+  "amount": 25
+}
+
+<> 2026-01-14T144436.415.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 31
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "balance": 100
+}
+
+<> 2026-01-14T144422.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 31
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "balance": 100
+}
+
+<> 2026-01-14T144407.415.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 31
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "balance": 100
+}
+
+<> 2026-01-14T144404.415.json
+
+###
+
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+Content-Length: 65
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+<> 2026-01-14T144346.200.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 33
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "balance": 100.5
+}
+
+<> 2026-01-14T144321.415.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+Content-Length: 80
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+
+{
+  "id": 1,
+  "accountNumber": "ACC1",
+  "balance": 0.0,
+  "transactions": []
+}
+
+<> 2026-01-14T144156.201.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+content-length: 0
+
+<> 2026-01-14T143928.201.json
+
+###
+
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+Content-Length: 65
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+<> 2026-01-14T143917.200.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 83
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T143908.201.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+content-length: 0
+
+<> 2026-01-14T143512.500.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2026-01-14T143459.500.json
+
+###
+
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2026-01-14T143440.500.json
+
+###
+
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+Content-Length: 65
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+<> 2026-01-14T143403.200.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 83
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T143348.201.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 65
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+<> 2026-01-14T143320.500.json
+
+###
+
+DELETE http://localhost:4111/api/v1/admin/users/2
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2026-01-14T133756.200.txt
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 85
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate1998112",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T132026.201.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 76
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate1998",
+  "password": "Kate19981№",
+  "role": "USER"
+}
+
+<> 2026-01-14T132022.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 77
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "Kate19981№",
+  "role": "USER"
+}
+
+<> 2026-01-14T132016.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 75
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "Kate19981:",
+  "role": "USER"
+}
+
+<> 2026-01-14T132003.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 75
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "Kate19981.",
+  "role": "USER"
+}
+
+<> 2026-01-14T131955.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 75
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981.",
+  "role": "USER"
+}
+
+<> 2026-01-14T131946.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 74
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981",
+  "role": "USER"
+}
+
+<> 2026-01-14T131932.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 74
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981",
+  "role": "USER"
+}
+
+<> 2026-01-14T131926.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 74
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate19981",
+  "password": "kate19981",
+  "role": "USER"
+}
+
+<> 2026-01-14T131921.400.json
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate199811",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T131916.400.txt
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate199811",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T131912.400.txt
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate199811",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T131911.400.txt
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate199811",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T131909.400.txt
+
+###
+
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "kate199811",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+<> 2026-01-14T131900.201.json
+
+###
+

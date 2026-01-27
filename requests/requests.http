@@ -1,0 +1,233 @@
+### Get auth token
+### Admin Token: Authorization: Basic YWRtaW46YWRtaW4=
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+### Positive test: Admin can create new user with correct data
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "kate1998",
+  "password": "Kate19981№",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with blank username
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "kate1998112",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with username 2  or 16 characters
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "ab",
+  "password": "{{$random.uuid}}",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with username 2 or 16 characters
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "abcdefghfhfhffhr",
+  "password": "{{$random.uuid}}",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with username contains $%^&*()@# characters
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "$%^&*()@#",
+  "password": "{{$random.uuid}}",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with blank password
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user123423e",
+  "password": "dddDaaa13!$",
+  "role": "EDITOR"
+}
+
+### Negative test: Admin cannot create new user with password less than 8 characters
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "{{$random.uuid}}",
+  "password": "1234567",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with password without digits
+### Negative test: Admin cannot create new user with password without one lower case character
+### Negative test: Admin cannot create new user with password without one upper case character
+### Negative test: Admin cannot create new user with password without special character
+### Negative test: Admin cannot create new user with password with spaces
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "{{$random.uuid}}",
+  "password": "1234567",
+  "role": "USER"
+}
+
+### Negative test: Admin cannot create new user with role not from list "ADMIN", "USER"
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "{{$random.uuid}}",
+  "password": "{{$random.uuid}}",
+  "role": "EDITOR"
+}
+
+### Negative test: Create user that already exists by admin
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "kate1998",
+  "password": "kate1998",
+  "role": "USER"
+}
+
+
+### Positive test: Authorized user can create account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Positive test: check account was created
+GET http://localhost:4111/api/v1/customer/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+
+
+### POST admin/users
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K",
+  "role": "USER"
+}
+
+### DELETE admin/users
+DELETE http://localhost:4111/api/v1/admin/users/2
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Get auth token
+### Admin Token: Authorization: Basic YWRtaW46YWRtaW4=
+### Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "kate19981",
+  "password": "kate19981У№!:$K"
+}
+
+### POST accounts
+POST http://localhost:4111/api/v1/accounts
+accept: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+### POST accounts/transfer
+POST http://localhost:4111/api/v1/accounts/transfer
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+{
+  "senderAccountId": 1,
+  "receiverAccountId": 2,
+  "amount": 25
+}
+
+### POST accounts/deposit
+POST http://localhost:4111/api/v1/accounts/deposit
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+{
+  "id": 1,
+  "balance": 100
+}
+
+### GET customer/profile
+GET http://localhost:4111/api/v1/customer/profile
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+### PUT customer/profile
+PUT http://localhost:4111/api/v1/customer/profile
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+{
+  "name": "Julia Bay"
+}
+
+### GET customer/accounts
+GET http://localhost:4111/api/v1/customer/accounts
+accept: application/json
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MdCj4oSWITokSw==
+
+
+
+
+
+
+### sdf
+{
+  "id": 1,
+  "accountNumber": "ACC1",
+  "balance": 0.0,
+  "transactions": []
+}
+
+{
+  "id": 2,
+  "accountNumber": "ACC2",
+  "balance": 0.0,
+  "transactions": []
+}
