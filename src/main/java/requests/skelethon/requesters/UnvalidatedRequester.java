@@ -49,8 +49,6 @@ public class UnvalidatedRequester extends HttpRequest implements CrudEndpointInt
   public ValidatableResponse post(BaseModel model) {
     var body = model == null  ? "" : model;
 
-    System.out.println(model.toString());
-    System.out.println(endpoint.getUrl());
     return given()
         .spec(requestSpecification)
         .body(body)
