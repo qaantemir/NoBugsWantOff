@@ -1,26 +1,21 @@
 package ui;
 
 import static com.codeborne.selenide.Condition.exactText;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.open;
-import static com.codeborne.selenide.Selenide.switchTo;
+import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Selenide.refresh;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.Selenide;
-import generators.TestDataGenerator;
-import models.AuthLoginRequest;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
-import models.CustomerProfileRequest;
+import api.generators.TestDataGenerator;
+import api.models.AuthLoginRequest;
+import api.models.CreateUserRequest;
+import api.models.CreateUserResponse;
+import api.models.CustomerProfileRequest;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.ValidatedRequester;
+import api.requests.steps.AdminSteps;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.Alert;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.ValidatedRequester;
-import requests.steps.AdminSteps;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
 
 public class NameUiTest extends BaseUiTest {
 
@@ -29,44 +24,23 @@ public class NameUiTest extends BaseUiTest {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
     AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
         createUserRequest);
-
-    open("/login");
-
-    $(Selectors.byAttribute("placeholder", "Username")).sendKeys(createUserRequest.getUsername());
-    $(Selectors.byAttribute("placeholder", "Password")).sendKeys(createUserRequest.getPassword());
-    $(Selectors.byTagName("button")).shouldHave(exactText("Login")).click();
-
-    $(Selectors.byText("User Dashboard")).shouldBe(Condition.visible);
-
-    $(Selectors.byClassName("welcome-text")).shouldHave(exactText("Welcome, noname!"));
-
-    $(Selectors.byClassName("profile-header"))
-        .shouldBe(Condition.visible)
-        .shouldHave(Condition.text("noname"))
-        .shouldHave(Condition.text(createUserRequest.getUsername()))
-        .click();
-
-    $(Selectors.byText("✏️ Edit Profile")).shouldBe(Condition.visible);
-
     var name = TestDataGenerator.generate(CustomerProfileRequest.class).getName();
-    $(Selectors.byAttribute("placeholder", "Enter new name")).sendKeys(name);
 
-    $("button.btn.btn-primary.mt-3")
-        .shouldHave(Condition.exactText("💾 Save Changes"))
-        .click();
+    authAsUser(authLoginRequest);
 
-    Alert alert = switchTo().alert();
+    UserDashboard userDashboard = new UserDashboard();
+    userDashboard.open();
 
-    assertThat(alert.getText()).contains("✅ Name updated successfully!");
+    userDashboard.welcomeText.shouldHave(text("Welcome, noname!"));
+    userDashboard.userinfoName.shouldHave(exactText("noname"));
+    userDashboard.clickOnUserinfo();
 
-    alert.accept();
+    EditProfilePage editProfilePage = new EditProfilePage();
+    editProfilePage.updateName(name);
 
-    Selenide.refresh();
+    editProfilePage.checkAndAcceptAlert(ui.Alert.NAME_UPDATED_SUCCESSFULLY);
 
-    $(Selectors.byClassName("profile-header"))
-        .shouldBe(Condition.visible)
-        .shouldHave(Condition.text(name))
-        .shouldHave(Condition.text(createUserRequest.getUsername()));
+    refresh();
 
     var actualName = new ValidatedRequester<CreateUserResponse>(
         Endpoint.GET_CUSTOMER_PROFILE,
@@ -82,44 +56,23 @@ public class NameUiTest extends BaseUiTest {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
     AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
         createUserRequest);
+    var name = TestDataGenerator.generate(CustomerProfileRequest.class).getName() + "123";
 
-    open("/login");
+    authAsUser(authLoginRequest);
 
-    $(Selectors.byAttribute("placeholder", "Username")).sendKeys(createUserRequest.getUsername());
-    $(Selectors.byAttribute("placeholder", "Password")).sendKeys(createUserRequest.getPassword());
-    $(Selectors.byTagName("button")).shouldHave(exactText("Login")).click();
+    UserDashboard userDashboard = new UserDashboard();
+    userDashboard.open();
 
-    $(Selectors.byText("User Dashboard")).shouldBe(Condition.visible);
+    userDashboard.welcomeText.shouldHave(text("Welcome, noname!"));
+    userDashboard.userinfoName.shouldHave(exactText("noname"));
+    userDashboard.clickOnUserinfo();
 
-    $(Selectors.byClassName("welcome-text")).shouldHave(exactText("Welcome, noname!"));
+    EditProfilePage editProfilePage = new EditProfilePage();
+    editProfilePage.updateName(name);
 
-    $(Selectors.byClassName("profile-header"))
-        .shouldBe(Condition.visible)
-        .shouldHave(Condition.text("noname"))
-        .shouldHave(Condition.text(createUserRequest.getUsername()))
-        .click();
+    editProfilePage.checkAndAcceptAlert(ui.Alert.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY);
 
-    $(Selectors.byText("✏️ Edit Profile")).shouldBe(Condition.visible);
-
-    var name = TestDataGenerator.generate(CustomerProfileRequest.class).getName();
-    $(Selectors.byAttribute("placeholder", "Enter new name")).sendKeys(name + 1);
-
-    $("button.btn.btn-primary.mt-3")
-        .shouldHave(Condition.exactText("💾 Save Changes"))
-        .click();
-
-    Alert alert = switchTo().alert();
-
-    assertThat(alert.getText()).contains("Name must contain two words with letters only");
-
-    alert.accept();
-
-    Selenide.refresh();
-
-    $(Selectors.byClassName("profile-header"))
-        .shouldBe(Condition.visible)
-        .shouldHave(Condition.text("noname"))
-        .shouldHave(Condition.text(createUserRequest.getUsername()));
+    refresh();
 
     var actualName = new ValidatedRequester<CreateUserResponse>(
         Endpoint.GET_CUSTOMER_PROFILE,

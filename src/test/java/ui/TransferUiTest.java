@@ -1,34 +1,29 @@
 package ui;
 
-import static com.codeborne.selenide.Condition.exactText;
+import static com.codeborne.selenide.Condition.have;
 import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$$;
-import static com.codeborne.selenide.Selenide.open;
-import static com.codeborne.selenide.Selenide.switchTo;
+import static com.codeborne.selenide.Selenide.refresh;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import api.generators.TestDataGenerator;
+import api.models.AccountsDepositRequest;
+import api.models.AccountsRequest;
+import api.models.AuthLoginRequest;
+import api.models.CreateUserRequest;
+import api.models.CreateUserResponse;
+import api.models.CustomerProfileRequest;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.UnvalidatedRequester;
+import api.requests.steps.AccountsSteps;
+import api.requests.steps.AdminSteps;
+import api.requests.steps.CustomerSteps;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
-import com.codeborne.selenide.SelenideElement;
-import generators.TestDataGenerator;
 import java.util.List;
-import models.AccountsDepositRequest;
-import models.AuthLoginRequest;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
-import models.CustomerProfileRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.Alert;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.UnvalidatedRequester;
-import requests.steps.AccountsSteps;
-import requests.steps.AdminSteps;
-import requests.steps.CustomerSteps;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
 
 public class TransferUiTest extends BaseUiTest {
 
@@ -69,153 +64,71 @@ public class TransferUiTest extends BaseUiTest {
 
   @Test
   void transferValidValueShouldBeSuccess() {
-    open("/login");
+    authAsUser(authLoginRequest);
 
-    $(Selectors.byAttribute("placeholder", "Username")).sendKeys(authLoginRequest.getUsername());
-    $(Selectors.byAttribute("placeholder", "Password")).sendKeys(authLoginRequest.getPassword());
-    $(Selectors.byTagName("button")).shouldHave(exactText("Login")).click();
+    TransferPage transferPage = new TransferPage();
+    transferPage.open();
 
-    $(Selectors.byText("User Dashboard")).shouldBe(Condition.visible);
+    Selenide.sleep(1000);
 
-    $(Selectors.byText("\uD83D\uDD04 Make a Transfer")).click();
+    assertThat(transferPage.selectAccount).hasSize(2);
 
-    $(Selectors.byText("\uD83D\uDD04 Make a Transfer")).shouldBe(Condition.visible);
+    transferPage.transferMoney(
+        transferPage.selectAccount.first(),
+        customerProfileRequest.getName(),
+        "ACC" + receiverAccountId.toString(),
+        10000.);
 
-    List<SelenideElement> options = $$(
-        "select[class='form-control account-selector'] option").stream().toList();
+    transferPage.checkAndAcceptAlert(ui.Alert.SUCCESSFULLY_TRANSFERRED);
 
-    assertThat(options).isNotNull();
-    assertThat(options).size().isEqualTo(3);
+    refresh();
 
-    options = options.stream()
-        .filter(e -> e.getAttribute("value") != null && e.getAttribute("value").matches("\\d+"))
-        .toList();
+    transferPage.selectAccount.filter(have(text(receiverAccountId.toString()))).first()
+        .shouldBe(Condition.clickable).shouldHave(text("Balance: $10000.00"));
 
+    List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
+
+    assertThat(accountsRequestList).size().isEqualTo(2);
     assertThat(
-        options.stream()
-            .anyMatch(e -> e.getText().matches(".*Balance: \\$10000\\.00.*")))
-        .isTrue();
-
-    options.stream()
-        .filter(e -> e.getText().matches(".*Balance: \\$10000\\.00.*")).toList().getFirst()
-        .click();
-
-    $(Selectors.byAttribute("placeholder", "Enter recipient name")).sendKeys(
-        customerProfileRequest.getName());
-    $(Selectors.byAttribute("placeholder", "Enter recipient account number")).sendKeys(
-        "ACC" + receiverAccountId.toString());
-    $(Selectors.byAttribute("placeholder", "Enter amount")).sendKeys("10000");
-
-    $(Selectors.byId("confirmCheck")).click();
-
-    $("button[class='btn-primary shadow-custom green-btn mt-4']").shouldHave(text("Send Transfer"))
-        .click();
-
-    Alert alert = switchTo().alert();
-
-    assertThat(alert.getText()).contains(
-        "✅ Successfully transferred $10000 to account ACC%d!".formatted(receiverAccountId));
-
-    alert.accept();
-
-    Selenide.refresh();
-
-    options = $$("select[class='form-control account-selector'] option").stream().toList();
-
-    assertThat(options).isNotNull();
-    assertThat(options).size().isEqualTo(3);
-
-    options = options.stream()
-        .filter(e -> e.getAttribute("value") != null && e.getAttribute("value").matches("\\d+"))
-        .toList();
-
-    assertThat(
-        options.stream()
-            .anyMatch(
-                e -> e.getAttribute("value").equals(receiverAccountId.toString()) && e.getText()
-                    .matches(".*Balance: \\$10000\\.00.*")))
-        .isTrue();
-
-    createUserResponse = CustomerSteps.getCustomerProfiles(authLoginRequest);
-
-    var receiverBalance = createUserResponse.getAccounts().get(1).getBalance();
-
-    assertThat(receiverBalance).isEqualTo(10000.);
-
+        accountsRequestList.stream()
+            .filter(el -> el.getAccountNumber().equals("ACC" + receiverAccountId.toString()))
+            .toList()
+            .getFirst()
+            .getBalance()).isEqualTo(10000.);
   }
 
   @Test
   void transferInvalidValueShouldBeSuccess() {
-    open("/login");
+    authAsUser(authLoginRequest);
 
-    $(Selectors.byAttribute("placeholder", "Username")).sendKeys(authLoginRequest.getUsername());
-    $(Selectors.byAttribute("placeholder", "Password")).sendKeys(authLoginRequest.getPassword());
-    $(Selectors.byTagName("button")).shouldHave(exactText("Login")).click();
+    TransferPage transferPage = new TransferPage();
+    transferPage.open();
 
-    $(Selectors.byText("User Dashboard")).shouldBe(Condition.visible);
+    Selenide.sleep(1000);
 
-    $(Selectors.byText("\uD83D\uDD04 Make a Transfer")).click();
+    assertThat(transferPage.selectAccount).hasSize(2);
 
-    $(Selectors.byText("\uD83D\uDD04 Make a Transfer")).shouldBe(Condition.visible);
+    transferPage.transferMoney(
+        transferPage.selectAccount.first(),
+        customerProfileRequest.getName(),
+        "ACC" + receiverAccountId.toString(),
+        10000.01);
 
-    List<SelenideElement> options = $$(
-        "select[class='form-control account-selector'] option").stream().toList();
+    transferPage.checkAndAcceptAlert(ui.Alert.UNSUCCESSFUL_TRANSFERRED);
 
-    assertThat(options).isNotNull();
-    assertThat(options).size().isEqualTo(3);
+    refresh();
 
-    options = options.stream()
-        .filter(e -> e.getAttribute("value") != null && e.getAttribute("value").matches("\\d+"))
-        .toList();
+    transferPage.selectAccount.filter(have(text(receiverAccountId.toString()))).first()
+        .shouldBe(Condition.clickable).shouldHave(text("Balance: $0.00"));
 
+    List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
+
+    assertThat(accountsRequestList).size().isEqualTo(2);
     assertThat(
-        options.stream()
-            .anyMatch(e -> e.getText().matches(".*Balance: \\$10000\\.00.*")))
-        .isTrue();
-
-    options.stream()
-        .filter(e -> e.getText().matches(".*Balance: \\$10000\\.00.*")).toList().getFirst()
-        .click();
-
-    $(Selectors.byAttribute("placeholder", "Enter recipient name")).sendKeys(
-        customerProfileRequest.getName());
-    $(Selectors.byAttribute("placeholder", "Enter recipient account number")).sendKeys(
-        "ACC" + receiverAccountId.toString());
-    $(Selectors.byAttribute("placeholder", "Enter amount")).sendKeys("10000.01");
-
-    $(Selectors.byId("confirmCheck")).click();
-
-    $("button[class='btn-primary shadow-custom green-btn mt-4']").shouldHave(text("Send Transfer"))
-        .click();
-
-    Alert alert = switchTo().alert();
-
-    assertThat(alert.getText()).contains("❌ Error: Transfer amount cannot exceed 10000");
-
-    alert.accept();
-
-    Selenide.refresh();
-
-    options = $$("select[class='form-control account-selector'] option").stream().toList();
-
-    assertThat(options).isNotNull();
-    assertThat(options).size().isEqualTo(3);
-
-    options = options.stream()
-        .filter(e -> e.getAttribute("value") != null && e.getAttribute("value").matches("\\d+"))
-        .toList();
-
-    assertThat(
-        options.stream()
-            .anyMatch(
-                e -> e.getAttribute("value").equals(receiverAccountId.toString()) && e.getText()
-                    .matches(".*Balance: \\$0\\.00.*")))
-        .isTrue();
-
-    createUserResponse = CustomerSteps.getCustomerProfiles(authLoginRequest);
-
-    var receiverBalance = createUserResponse.getAccounts().get(1).getBalance();
-
-    assertThat(receiverBalance).isEqualTo(0);
+        accountsRequestList.stream()
+            .filter(el -> el.getAccountNumber().equals("ACC" + receiverAccountId.toString()))
+            .toList()
+            .getFirst()
+            .getBalance()).isEqualTo(0.);
   }
 }
