@@ -9,15 +9,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selectors;
+import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 
-public class TransferPage extends BasePage<DepositPage> {
+public class TransferPage extends BasePage<TransferPage> {
   ElementsCollection selectAccount = $$("select.form-control.account-selector option").filterBy(not(attribute("value", "")));
   SelenideElement recipientNamePlaceholder = $(Selectors.byAttribute("placeholder", "Enter recipient name"));
   SelenideElement recipientAccountNumberPlaceholder = $(Selectors.byAttribute("placeholder", "Enter recipient account number"));
   SelenideElement amountPlaceholder = $(Selectors.byAttribute("placeholder", "Enter amount"));
   SelenideElement confirmCheckBox = $(Selectors.byId("confirmCheck"));
   SelenideElement confirmDepositButton = $("button[class='btn-primary shadow-custom green-btn mt-4']");
+  public final static Double MAX_TRANSFER_VALUE = 10000.;
 
   @Override
   public String url() {
@@ -25,6 +27,7 @@ public class TransferPage extends BasePage<DepositPage> {
   }
 
   public TransferPage transferMoney(SelenideElement accountSelect, String recipientName, String recipientAccountNumber, Double amount) {
+    Selenide.sleep(1000);
     accountSelect.click();
     this.recipientNamePlaceholder.setValue(recipientName);
     this.recipientAccountNumberPlaceholder.sendKeys(recipientAccountNumber);

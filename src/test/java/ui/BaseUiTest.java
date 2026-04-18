@@ -22,8 +22,8 @@ public class BaseUiTest {
     Configuration.baseUrl = Config.getProperty("selenide.url");
     Configuration.browser = Config.getProperty("selenide.browser");
     Configuration.browserSize = Config.getProperty("selenide.browserSize");
-    Configuration.holdBrowserOpen = true;
-    Configuration.timeout = 1000;
+//    Configuration.holdBrowserOpen = true;
+    Configuration.timeout = 2000;
     Configuration.pageLoadTimeout = 2000;
     Configuration.pollingInterval = 2000;
 

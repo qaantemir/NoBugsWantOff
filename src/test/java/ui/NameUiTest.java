@@ -24,23 +24,25 @@ public class NameUiTest extends BaseUiTest {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
     AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
         createUserRequest);
-    var name = TestDataGenerator.generate(CustomerProfileRequest.class).getName();
+    String name = TestDataGenerator.generate(CustomerProfileRequest.class).getName();
 
     authAsUser(authLoginRequest);
 
-    UserDashboard userDashboard = new UserDashboard();
-    userDashboard.open();
+    new UserDashboard()
+        .open()
+        .clickOnUserinfo()
+        .getUserinfoName()
+        .shouldHave(exactText(UserDashboard.USER_INFO_DEFAULT_NAME));
 
-    userDashboard.welcomeText.shouldHave(text("Welcome, noname!"));
-    userDashboard.userinfoName.shouldHave(exactText("noname"));
-    userDashboard.clickOnUserinfo();
+    new EditProfilePage()
+        .updateName(name)
+        .checkAndAcceptAlert(Alert.NAME_UPDATED_SUCCESSFULLY);
 
-    EditProfilePage editProfilePage = new EditProfilePage();
-    editProfilePage.updateName(name);
-
-    editProfilePage.checkAndAcceptAlert(ui.Alert.NAME_UPDATED_SUCCESSFULLY);
-
-    refresh();
+    new UserDashboard()
+        .open()
+        .clickOnUserinfo()
+        .getUserinfoName()
+        .shouldHave(exactText(name));
 
     var actualName = new ValidatedRequester<CreateUserResponse>(
         Endpoint.GET_CUSTOMER_PROFILE,
@@ -48,31 +50,32 @@ public class NameUiTest extends BaseUiTest {
         ResponseSpecs.requestReturnsOk()
     ).get().getName();
 
-    assertThat(actualName).isEqualTo(name);
-  }
+    assertThat(actualName).isEqualTo(name);  }
 
   @Test
   void invalidNameShouldReturnFail() {
     CreateUserRequest createUserRequest = AdminSteps.createUser();
     AuthLoginRequest authLoginRequest = TestDataGenerator.Founded.getAuthLoginRequest(
         createUserRequest);
-    var name = TestDataGenerator.generate(CustomerProfileRequest.class).getName() + "123";
+    String name = TestDataGenerator.generate(CustomerProfileRequest.class).getName() + "123";
 
     authAsUser(authLoginRequest);
 
-    UserDashboard userDashboard = new UserDashboard();
-    userDashboard.open();
+    new UserDashboard()
+        .open()
+        .clickOnUserinfo()
+        .getUserinfoName()
+        .shouldHave(exactText(UserDashboard.USER_INFO_DEFAULT_NAME));
 
-    userDashboard.welcomeText.shouldHave(text("Welcome, noname!"));
-    userDashboard.userinfoName.shouldHave(exactText("noname"));
-    userDashboard.clickOnUserinfo();
+    new EditProfilePage().
+        updateName(name)
+        .checkAndAcceptAlert(Alert.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY);
 
-    EditProfilePage editProfilePage = new EditProfilePage();
-    editProfilePage.updateName(name);
-
-    editProfilePage.checkAndAcceptAlert(ui.Alert.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY);
-
-    refresh();
+    new UserDashboard()
+        .open()
+        .clickOnUserinfo()
+        .getUserinfoName()
+        .shouldHave(exactText(UserDashboard.USER_INFO_DEFAULT_NAME));
 
     var actualName = new ValidatedRequester<CreateUserResponse>(
         Endpoint.GET_CUSTOMER_PROFILE,

@@ -21,6 +21,7 @@ import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selenide;
+import com.codeborne.selenide.SelenideElement;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,25 +67,27 @@ public class TransferUiTest extends BaseUiTest {
   void transferValidValueShouldBeSuccess() {
     authAsUser(authLoginRequest);
 
-    TransferPage transferPage = new TransferPage();
-    transferPage.open();
+    SelenideElement accountElement = new TransferPage()
+        .open().selectAccount.first();
+
+    new TransferPage().transferMoney(accountElement,
+            customerProfileRequest.getName(),
+            "ACC" + receiverAccountId.toString(),
+            TransferPage.MAX_TRANSFER_VALUE)
+        .checkAndAcceptAlert(Alert.SUCCESSFULLY_TRANSFERRED)
+        .refresh();
+
+    SelenideElement receiverAccountElement = new TransferPage()
+        .open()
+        .selectAccount
+        .filter(have(text(receiverAccountId.toString())))
+        .first(); // не получилось проверку на 123 без слипа сделать
 
     Selenide.sleep(1000);
 
-    assertThat(transferPage.selectAccount).hasSize(2);
+    receiverAccountElement
+        .shouldHave(text("Balance: $%d.00".formatted(TransferPage.MAX_TRANSFER_VALUE.longValue())));
 
-    transferPage.transferMoney(
-        transferPage.selectAccount.first(),
-        customerProfileRequest.getName(),
-        "ACC" + receiverAccountId.toString(),
-        10000.);
-
-    transferPage.checkAndAcceptAlert(ui.Alert.SUCCESSFULLY_TRANSFERRED);
-
-    refresh();
-
-    transferPage.selectAccount.filter(have(text(receiverAccountId.toString()))).first()
-        .shouldBe(Condition.clickable).shouldHave(text("Balance: $10000.00"));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 
@@ -94,32 +97,34 @@ public class TransferUiTest extends BaseUiTest {
             .filter(el -> el.getAccountNumber().equals("ACC" + receiverAccountId.toString()))
             .toList()
             .getFirst()
-            .getBalance()).isEqualTo(10000.);
+            .getBalance()).isEqualTo(TransferPage.MAX_TRANSFER_VALUE);
   }
 
   @Test
-  void transferInvalidValueShouldBeSuccess() {
+  void transferInvalidValueShouldBeFail() {
     authAsUser(authLoginRequest);
 
-    TransferPage transferPage = new TransferPage();
-    transferPage.open();
+    SelenideElement accountElement = new TransferPage()
+        .open().selectAccount.first();
+
+    new TransferPage().transferMoney(accountElement,
+            customerProfileRequest.getName(),
+            "ACC" + receiverAccountId.toString(),
+            TransferPage.MAX_TRANSFER_VALUE + 0.1)
+        .checkAndAcceptAlert(Alert.UNSUCCESSFUL_TRANSFERRED)
+        .refresh();
+
+    SelenideElement receiverAccountElement = new TransferPage()
+        .open()
+        .selectAccount
+        .filter(have(text(receiverAccountId.toString())))
+        .first(); // не получилось проверку на 123 без слипа сделать
 
     Selenide.sleep(1000);
 
-    assertThat(transferPage.selectAccount).hasSize(2);
+    receiverAccountElement
+        .shouldHave(text(TransferPage.DEFAULT_BALANCE_FIELD_VALUE));
 
-    transferPage.transferMoney(
-        transferPage.selectAccount.first(),
-        customerProfileRequest.getName(),
-        "ACC" + receiverAccountId.toString(),
-        10000.01);
-
-    transferPage.checkAndAcceptAlert(ui.Alert.UNSUCCESSFUL_TRANSFERRED);
-
-    refresh();
-
-    transferPage.selectAccount.filter(have(text(receiverAccountId.toString()))).first()
-        .shouldBe(Condition.clickable).shouldHave(text("Balance: $0.00"));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 

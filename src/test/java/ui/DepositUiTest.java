@@ -28,31 +28,26 @@ public class DepositUiTest extends BaseUiTest {
 
     authAsUser(authLoginRequest);
 
-    DepositPage depositPage = new DepositPage();
-    depositPage.open();
+    SelenideElement accountElement = new DepositPage()
+        .open()
+        .getTheOnlyOneAccount()
+        .shouldHave(text(DepositPage.DEFAULT_BALANCE_FIELD_VALUE));
 
-    Selenide.sleep(1000);
+    new DepositPage()
+        .open()
+        .depositMoney(accountElement, DepositPage.MAX_DEPOSIT_VALUE)
+        .checkAndAcceptAlert(ui.Alert.SUCCESSFULLY_DEPOSITED)
+        .refresh();
 
-    assertThat(depositPage.selectAccount).hasSize(1);
-
-    SelenideElement accountElement = depositPage.selectAccount.first();
-    accountElement.shouldBe(Condition.clickable).shouldHave(text("Balance: $0.00"));
-
-    depositPage.depositMoney(accountElement, 5000L);
-
-    depositPage.checkAndAcceptAlert(ui.Alert.SUCCESSFULLY_DEPOSITED);
-
-    refresh();
-
-    depositPage.open();
-
-    depositPage.getSelectAccount().first().shouldBe(Condition.clickable)
-        .shouldHave(text("Balance: $5000.00"));
+    new DepositPage()
+        .open()
+        .getTheOnlyOneAccount().shouldBe(Condition.clickable)
+        .shouldHave(text("Balance: $%d.00".formatted(DepositPage.MAX_DEPOSIT_VALUE)));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 
     assertThat(accountsRequestList).size().isEqualTo(1);
-    assertThat(accountsRequestList.getFirst().getBalance()).isEqualTo(5000.);
+    assertThat(accountsRequestList.getFirst().getBalance()).isEqualTo(Double.valueOf(DepositPage.MAX_DEPOSIT_VALUE));
   }
 
   @Test
@@ -64,28 +59,21 @@ public class DepositUiTest extends BaseUiTest {
 
     authAsUser(authLoginRequest);
 
-    DepositPage depositPage = new DepositPage();
-    depositPage.open();
+    SelenideElement accountElement = new DepositPage()
+        .open()
+        .getTheOnlyOneAccount()
+        .shouldHave(text(DepositPage.DEFAULT_BALANCE_FIELD_VALUE));
 
-    Selenide.sleep(1000);
+    new DepositPage()
+        .open()
+        .depositMoney(accountElement, DepositPage.MAX_DEPOSIT_VALUE + 1)
+        .checkAndAcceptAlert(ui.Alert.UNSUCCESSFUL_DEPOSITED)
+        .refresh();
 
-    assertThat(depositPage.selectAccount).hasSize(1);
-
-    SelenideElement accountElement = depositPage.selectAccount.first();
-    accountElement.shouldBe(Condition.clickable).shouldHave(text("Balance: $0.00"));
-
-    depositPage.depositMoney(accountElement, 1000000L);
-
-    depositPage.checkAndAcceptAlert(ui.Alert.UNSUCCESSFUL_DEPOSITED);
-
-    refresh();
-
-    depositPage.open();
-
-    Selenide.sleep(1000);
-
-    depositPage.getSelectAccount().first().shouldBe(Condition.clickable)
-        .shouldHave(text("Balance: $0.00"));
+    new DepositPage()
+        .open()
+        .getTheOnlyOneAccount().shouldBe(Condition.clickable)
+        .shouldHave(text(DepositPage.DEFAULT_BALANCE_FIELD_VALUE));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 
