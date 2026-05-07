@@ -1,7 +1,6 @@
 package ui;
 
 import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Selenide.refresh;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import api.generators.TestDataGenerator;
@@ -12,12 +11,13 @@ import api.requests.steps.AccountsSteps;
 import api.requests.steps.AdminSteps;
 import api.requests.steps.CustomerSteps;
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class DepositUiTest extends BaseUiTest {
+
+  private final long DEPOSIT_AMOUNT = 5000L;
 
   @Test
   void validDepositByUserShouldReturnSuccess() {
@@ -35,19 +35,19 @@ public class DepositUiTest extends BaseUiTest {
 
     new DepositPage()
         .open()
-        .depositMoney(accountElement, DepositPage.MAX_DEPOSIT_VALUE)
+        .depositMoney(accountElement, DEPOSIT_AMOUNT)
         .checkAndAcceptAlert(ui.Alert.SUCCESSFULLY_DEPOSITED)
         .refresh();
 
     new DepositPage()
         .open()
         .getTheOnlyOneAccount().shouldBe(Condition.clickable)
-        .shouldHave(text("Balance: $%d.00".formatted(DepositPage.MAX_DEPOSIT_VALUE)));
+        .shouldHave(text(DepositPage.MAX_DEPOSIT_VALUE));
 
     List<AccountsRequest> accountsRequestList = CustomerSteps.getCustomerAccounts(authLoginRequest);
 
     assertThat(accountsRequestList).size().isEqualTo(1);
-    assertThat(accountsRequestList.getFirst().getBalance()).isEqualTo(Double.valueOf(DepositPage.MAX_DEPOSIT_VALUE));
+    assertThat(accountsRequestList.getFirst().getBalance()).isEqualTo(DEPOSIT_AMOUNT);
   }
 
   @Test
@@ -66,7 +66,7 @@ public class DepositUiTest extends BaseUiTest {
 
     new DepositPage()
         .open()
-        .depositMoney(accountElement, DepositPage.MAX_DEPOSIT_VALUE + 1)
+        .depositMoney(accountElement, DEPOSIT_AMOUNT + 1)
         .checkAndAcceptAlert(ui.Alert.UNSUCCESSFUL_DEPOSITED)
         .refresh();
 
