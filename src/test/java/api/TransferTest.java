@@ -1,24 +1,24 @@
 package api;
 
-import generators.TestDataGenerator;
+import api.generators.TestDataGenerator;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
-import models.AccountsDepositRequest;
-import models.AccountsTransferRequest;
-import models.AuthLoginRequest;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
+import api.models.AccountsDepositRequest;
+import api.models.AccountsTransferRequest;
+import api.models.AuthLoginRequest;
+import api.models.CreateUserRequest;
+import api.models.CreateUserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.steps.AccountsSteps;
-import requests.steps.AdminSteps;
-import requests.steps.CustomerSteps;
-import specs.ErrorCode;
-import specs.ResponseSpecs;
+import api.requests.steps.AccountsSteps;
+import api.requests.steps.AdminSteps;
+import api.requests.steps.CustomerSteps;
+import api.specs.ErrorCode;
+import api.specs.ResponseSpecs;
 
 public class TransferTest extends BaseTest {
 

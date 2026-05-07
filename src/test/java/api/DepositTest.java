@@ -1,23 +1,23 @@
 package api;
 
-import generators.TestDataGenerator;
+import api.generators.TestDataGenerator;
 import java.util.List;
 import java.util.stream.Stream;
-import models.AccountsDepositRequest;
-import models.AccountsRequest;
-import models.AuthLoginRequest;
-import models.CreateUserRequest;
-import models.comparison.ModelAssertions;
+import api.models.AccountsDepositRequest;
+import api.models.AccountsRequest;
+import api.models.AuthLoginRequest;
+import api.models.CreateUserRequest;
+import api.models.comparison.ModelAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.steps.AccountsSteps;
-import requests.steps.AdminSteps;
-import requests.steps.CustomerSteps;
-import specs.ErrorCode;
-import specs.ResponseSpecs;
+import api.requests.steps.AccountsSteps;
+import api.requests.steps.AdminSteps;
+import api.requests.steps.CustomerSteps;
+import api.specs.ErrorCode;
+import api.specs.ResponseSpecs;
 
 public class DepositTest extends BaseTest {
 

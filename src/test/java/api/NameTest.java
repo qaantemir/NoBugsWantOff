@@ -1,21 +1,21 @@
 package api;
 
-import generators.TestDataGenerator;
-import models.AuthLoginRequest;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
-import models.CustomerProfileRequest;
-import models.comparison.ModelAssertions;
+import api.generators.TestDataGenerator;
+import api.models.AuthLoginRequest;
+import api.models.CreateUserRequest;
+import api.models.CreateUserResponse;
+import api.models.CustomerProfileRequest;
+import api.models.comparison.ModelAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.UnvalidatedRequester;
-import requests.skelethon.requesters.ValidatedRequester;
-import requests.steps.AdminSteps;
-import specs.ErrorCode;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.UnvalidatedRequester;
+import api.requests.skelethon.requesters.ValidatedRequester;
+import api.requests.steps.AdminSteps;
+import api.specs.ErrorCode;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 
 public class NameTest extends BaseTest {
 

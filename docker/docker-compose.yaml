@@ -7,11 +7,11 @@ services:
       - nbank-network
 
   frontend:
-    image: nobugsme/nbank-ui:latest
-#    expose: # не открываем порт наружу, а даем доступ контейнерам в сети
-#      - "80"
-    ports:
-      - "3000:80"
+    image: nobugsme/nbank-ui:with_nginx_with_send_transfer_fix
+    expose: # не открываем порт наружу, а даем доступ контейнерам в сети
+      - "80"
+#    ports:
+#      - "3000:80"
     depends_on:
       - backend
     networks:
@@ -30,7 +30,7 @@ services:
       - nbank-network
 
   selenoid:
-    image: aerokube/selenoid:latest
+    image: aerokube/selenoid:1.10.9
 
     ports:
       - "4444:4444"
@@ -46,10 +46,21 @@ services:
       - nbank-network
 
   selenoid-ui:
-    image: aerokube/selenoid-ui:latest
+    image: aerokube/selenoid-ui:1.10.7
     ports:
       - "6567:8080"
-    command: ["--selenoid-uri", "http://selenoid:4444"]
+    command: [
+      "--selenoid-uri", "http://selenoid:4444",
+      "--allowed-origin", "*",
+      "--timeout", "10s",
+      "--period", "2s"
+    ]
+
+#    command: [
+#      "--webdriver-uri", "http://192.168.31.102:4444",  # ваш IP
+#      "--status-uri", "http://selenoid:4444"
+#    ]
+
     depends_on:
       - selenoid
     networks:
